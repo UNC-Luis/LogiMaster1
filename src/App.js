@@ -20,7 +20,7 @@ const PRECEDENCE = {
     [SYMBOLS.IFF]: 1
 };
 
-// Map operators to tailwind text colors for parentheses
+// Colors for parentheses based on the inner operator
 const OP_COLORS = {
     [SYMBOLS.NOT]: 'text-red-600',
     [SYMBOLS.AND]: 'text-blue-600',
@@ -34,6 +34,7 @@ const OP_COLORS = {
 
 const getRandomVar = () => VARS[Math.floor(Math.random() * VARS.length)];
 
+// Generates a random FLAT logical formula string (ambiguous without precedence)
 const generateFlatFormula = (length = 3) => {
     let formula = [];
     formula.push(Math.random() < 0.3 ? `${SYMBOLS.NOT} ${getRandomVar()}` : getRandomVar());
@@ -52,12 +53,14 @@ const generateFlatFormula = (length = 3) => {
     return formula.join(' ');
 };
 
+// Generates a deep recursive formula for Evaluation
 const generateStructuredFormula = (depth = 0, maxDepth = 3) => {
     if (depth >= maxDepth || (depth > 0 && Math.random() < 0.2)) {
         return getRandomVar();
     }
     
     const type = Math.random();
+    
     if (type < 0.3) {
         return `${SYMBOLS.NOT} (${generateStructuredFormula(depth + 1, maxDepth)})`;
     }
@@ -86,23 +89,40 @@ class ASTNode {
     }
 }
 
-// Robust Parser
+// Robust Parser with Mixed Associativity
 const parseToAST = (tokens) => {
     const findSplit = (toks) => {
         let balance = 0;
         let splitIdx = -1;
         let minPrec = 100;
 
+        // Iterate Right to Left to find the main operator
         for (let i = toks.length - 1; i >= 0; i--) {
             const t = toks[i];
             if (t === ')') balance++;
             else if (t === '(') balance--;
             else if (balance === 0) {
+                // Negation is unary, usually binds tightest, don't split binary tree here
                 if (t === SYMBOLS.NOT) continue;
+
                 const prec = PRECEDENCE[t] || 100;
-                if (prec < 100 && prec < minPrec) {
+                
+                // STRICT HIERARCHY CHECK
+                if (prec < minPrec) {
                     minPrec = prec;
                     splitIdx = i;
+                } 
+                // ASSOCIATIVITY HANDLING (When precedence is equal)
+                else if (prec === minPrec) {
+                    // IMP (⇒) and IFF (⇔) are RIGHT ASSOCIATIVE
+                    // We want the split to be as far LEFT as possible to group (A => (B => C))
+                    // Since we loop R->L, the last one found is the left-most.
+                    if (t === SYMBOLS.IMP || t === SYMBOLS.IFF) {
+                        splitIdx = i; 
+                    }
+                    // AND (∧) and OR (∨) are LEFT ASSOCIATIVE
+                    // We want the split to be as far RIGHT as possible to group ((A & B) & C)
+                    // Since we loop R->L, the first one found is the right-most. We keep it.
                 }
             }
         }
@@ -161,6 +181,48 @@ const getSubExpressions = (ast, list = new Set()) => {
     return list;
 };
 
+// --- HIGHLIGHTER HELPER ---
+const getParenthesisColors = (inputStr) => {
+    const colors = Array(inputStr.length).fill(null);
+    const stack = [];
+    
+    const findMainOp = (start, end) => {
+        let minPrec = 100;
+        let mainOp = 'DEFAULT';
+        let balance = 0;
+        
+        for (let i = start + 1; i < end; i++) {
+            const char = inputStr[i];
+            if (char === '(') balance++;
+            else if (char === ')') balance--;
+            else if (balance === 0) {
+                if (Object.values(SYMBOLS).includes(char)) {
+                    const prec = PRECEDENCE[char] || 100;
+                    if (prec <= minPrec) {
+                        minPrec = prec;
+                        mainOp = char;
+                    }
+                }
+            }
+        }
+        return OP_COLORS[mainOp] || OP_COLORS['DEFAULT'];
+    };
+
+    for (let i = 0; i < inputStr.length; i++) {
+        if (inputStr[i] === '(') {
+            stack.push(i);
+        } else if (inputStr[i] === ')') {
+            if (stack.length > 0) {
+                const start = stack.pop();
+                const colorClass = findMainOp(start, i);
+                colors[start] = colorClass;
+                colors[i] = colorClass;
+            }
+        }
+    }
+    return colors;
+};
+
 // --- LOGIC HELPERS ---
 
 const evaluateOp = (left, op, right) => {
@@ -214,7 +276,7 @@ const Header = () => (
             <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <BrainCircuit className="w-8 h-8 text-indigo-400" />
-                    LogiMaster Pro
+                    LogiMaster Pro by Luis Caballero
                 </h1>
                 <p className="text-slate-400 text-sm mt-1">Entrenador Avanzado de Lógica</p>
             </div>
@@ -225,7 +287,7 @@ const Header = () => (
     </header>
 );
 
-const LogicKeyboard = ({ onInsert }) => {
+const LogicKeyboard = ({ onInsert, extras = [] }) => {
     const keys = [
         { char: SYMBOLS.NOT, label: 'NEG' },
         { char: SYMBOLS.AND, label: 'CONJ' },
@@ -234,7 +296,8 @@ const LogicKeyboard = ({ onInsert }) => {
         { char: SYMBOLS.IFF, label: 'BIC' },
         { char: '(', label: '(' },
         { char: ')', label: ')' },
-        ...VARS.map(v => ({ char: v, label: v }))
+        ...VARS.map(v => ({ char: v, label: v })),
+        ...extras
     ];
     return (
         <div className="flex flex-wrap gap-2 my-2 p-2 bg-slate-100 rounded-lg border border-slate-200 justify-center">
@@ -251,53 +314,6 @@ const LogicKeyboard = ({ onInsert }) => {
     );
 };
 
-// --- HIGHLIGHTER HELPER ---
-const getParenthesisColors = (inputStr) => {
-    const colors = Array(inputStr.length).fill(null);
-    const stack = [];
-    
-    // Helper to find the main operator within a range (exclusive of nested parens)
-    const findMainOp = (start, end) => {
-        let minPrec = 100;
-        let mainOp = 'DEFAULT';
-        let balance = 0;
-        
-        // Scan inside the parenthesis pair
-        for (let i = start + 1; i < end; i++) {
-            const char = inputStr[i];
-            if (char === '(') balance++;
-            else if (char === ')') balance--;
-            else if (balance === 0) {
-                // If it's an operator
-                if (Object.values(SYMBOLS).includes(char)) {
-                    // Specific logic: NOT is unary, usually binds tight, but if it's the ONLY thing, it colors the parens
-                    // If we have ( P & Q ), main is &. If we have (~P), main is ~.
-                    const prec = PRECEDENCE[char] || 100;
-                    if (prec <= minPrec) {
-                        minPrec = prec;
-                        mainOp = char;
-                    }
-                }
-            }
-        }
-        return OP_COLORS[mainOp] || OP_COLORS['DEFAULT'];
-    };
-
-    for (let i = 0; i < inputStr.length; i++) {
-        if (inputStr[i] === '(') {
-            stack.push(i);
-        } else if (inputStr[i] === ')') {
-            if (stack.length > 0) {
-                const start = stack.pop();
-                const colorClass = findMainOp(start, i);
-                colors[start] = colorClass;
-                colors[i] = colorClass;
-            }
-        }
-    }
-    return colors;
-};
-
 // --- SECTIONS ---
 
 const SyntaxSection = () => {
@@ -307,7 +323,7 @@ const SyntaxSection = () => {
     const [status, setStatus] = useState("idle");
     const [errorMsg, setErrorMsg] = useState("");
     const [showAnswer, setShowAnswer] = useState(false);
-    const [mode, setMode] = useState("auto"); 
+    const [mode, setMode] = useState("auto"); // auto | custom
     
     const inputRef = useRef(null);
 
@@ -319,6 +335,7 @@ const SyntaxSection = () => {
         while(!valid && attempts < 10) {
             rawStr = generateFlatFormula(Math.floor(Math.random() * 2) + 3);
             const tokens = rawStr.replace(/\s/g, '').split(/([¬∧∨⇒⇔])/).filter(t => t);
+            
             try {
                 const ast = parseToAST(tokens);
                 fullStr = ast.toFullString();
@@ -339,8 +356,10 @@ const SyntaxSection = () => {
         try {
             const ast = parseToAST(tokens);
             if (ast.type === 'ERR') throw new Error();
+            
             const ideal = ast.toFullString().replace(/\s/g, '');
             const current = input.replace(/\s/g, '');
+            
             if (current === ideal) {
                 setStatus("correct");
                 setErrorMsg("");
@@ -361,6 +380,7 @@ const SyntaxSection = () => {
             handleCustomCheck();
             return;
         }
+
         const cleanInput = input.replace(/\s/g, '');
         const cleanExp = expected.replace(/\s/g, '');
         const rawContent = problemRaw.replace(/\s/g, '');
@@ -372,11 +392,11 @@ const SyntaxSection = () => {
         } else {
             setStatus("error");
             if (!isBalanced(cleanInput.split(''))) {
-                setErrorMsg("Paréntesis desbalanceados.");
+                setErrorMsg("Paréntesis desbalanceados: Revisa que cada '(' tenga su ')'.");
             } else if (inputContent !== rawContent) {
                 setErrorMsg("Has modificado las variables o conectores.");
             } else {
-                setErrorMsg("Agrupación incorrecta. Revisa la jerarquía.");
+                setErrorMsg("La agrupación es incorrecta. Revisa la jerarquía y asociatividad.");
             }
         }
     };
@@ -416,12 +436,16 @@ const SyntaxSection = () => {
                 <div>
                     <h3 className="text-blue-900 font-bold">Sintaxis y Precedencia</h3>
                     <p className="text-sm text-blue-800">
-                        {mode === 'auto' ? "Agrega paréntesis para eliminar la ambigüedad." : "Escribe cualquier fórmula."}
+                        {mode === 'auto' ? "Agrega paréntesis para eliminar la ambigüedad." : "Escribe cualquier fórmula para verificar su sintaxis."}
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setMode('auto')} className={`px-3 py-1 rounded text-sm font-bold ${mode === 'auto' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>Entrenamiento</button>
-                    <button onClick={() => { setMode('custom'); setInput(""); setStatus("idle"); setShowAnswer(false); }} className={`px-3 py-1 rounded text-sm font-bold ${mode === 'custom' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>Modo Libre</button>
+                    <button onClick={() => setMode('auto')} className={`px-3 py-1 rounded text-sm font-bold ${mode === 'auto' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>
+                        Entrenamiento
+                    </button>
+                    <button onClick={() => { setMode('custom'); setInput(""); setStatus("idle"); setShowAnswer(false); }} className={`px-3 py-1 rounded text-sm font-bold ${mode === 'custom' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>
+                        Modo Libre
+                    </button>
                 </div>
             </div>
 
@@ -597,7 +621,7 @@ const EvaluationSection = () => {
                 <h3 className="text-emerald-900 font-bold">Evaluación: Jerarquía Estricta</h3>
                 <p className="text-sm text-emerald-800">
                     Resuelve paso a paso haciendo clic en los operadores. <br/>
-                    <strong>Regla:</strong> Solo puedes resolver el operador con la mayor prioridad disponible.
+                    <strong>Regla:</strong> Solo puedes resolver el operador con la mayor prioridad disponible en ese momento.
                 </p>
             </div>
 
@@ -677,7 +701,7 @@ const SatisfactionSection = () => {
     const [variables, setVariables] = useState([]);
     const [subExprs, setSubExprs] = useState([]);
     const [rows, setRows] = useState([]); 
-    const inputRef = useRef(null); // Just for cursor handling if needed, though keyboard insert logic is manual here
+    const inputRef = useRef(null); 
 
     const parseVars = (str) => {
         const found = new Set();
@@ -767,16 +791,8 @@ const SatisfactionSection = () => {
     };
 
     // --- CURSOR INSERT FOR TABLE INPUT (OPTIONAL) ---
-    // Reusing the same manual logic for formula editing in Table mode
     const handleInsert = (char) => {
-        // Table section input ref is not strictly bound to cursor logic in original request, 
-        // but we can apply simple append or basic cursor logic if we added a ref.
-        // For simplicity based on prompt, applying cursor logic to "Parenthesis thing" (Syntax).
-        // Standard append here for safety unless requested.
         setFormula(prev => prev + char);
-        // generateTable is called via useEffect dependency or manual call? 
-        // Better to call generateTable inside a useEffect on formula change debounce, or directly.
-        // Direct call:
         generateTable(formula + char); 
     };
 
