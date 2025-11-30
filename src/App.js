@@ -881,33 +881,42 @@ const SatisfactionSection = () => {
   };
 
   const handleGenerate = () => {
-    // Increase depth from 2 to 3 and min operators for complexity
-    let f = generateStructuredFormula(0, 3);
-    // Ensure formula has enough "meat"
-    while (f.length < 5) {
-      f = generateStructuredFormula(0, 3);
-    }
-    setFormula(f);
-    generateTable(f);
-  };
+        // 1. Definimos variables restringidas SOLO para la tabla (Máximo 3)
+        const tableVars = ['P', 'Q', 'R'];
+        
+        // 2. Generador local que usa solo estas variables
+        const generateRestrictedFormula = (depth = 0, maxDepth = 3) => {
+            // Si llegamos a la profundidad máxima o por azar, devolvemos una variable
+            if (depth >= maxDepth || (depth > 0 && Math.random() < 0.2)) {
+                return tableVars[Math.floor(Math.random() * tableVars.length)];
+            }
+            
+            const type = Math.random();
+            // Probabilidad de negación
+            if (type < 0.3) {
+                return `${SYMBOLS.NOT} (${generateRestrictedFormula(depth + 1, maxDepth)})`;
+            }
+            
+            // Operadores binarios
+            const left = generateRestrictedFormula(depth + 1, maxDepth);
+            const right = generateRestrictedFormula(depth + 1, maxDepth);
+            const ops = [SYMBOLS.AND, SYMBOLS.OR, SYMBOLS.IMP, SYMBOLS.IFF];
+            const op = ops[Math.floor(Math.random() * ops.length)];
+            
+            return `(${left} ${op} ${right})`;
+        };
 
-  const handleManualChange = (val) => {
-    setFormula(val);
-    generateTable(val);
-  };
-
-  const updateRow = (rowIdx, type, key, val) => {
-    if (val !== "0" && val !== "1" && val !== "") return;
-    const newRows = [...rows];
-    if (type === "sub") {
-      newRows[rowIdx].subVals[key] = val;
-      newRows[rowIdx].statusSub[key] = "idle";
-    } else {
-      newRows[rowIdx].finalVal = val;
-      newRows[rowIdx].statusFinal = "idle";
-    }
-    setRows(newRows);
-  };
+        // 3. Generamos la fórmula
+        let f = generateRestrictedFormula(0, 3);
+        
+        // Aseguramos que no sea demasiado simple (mínimo 5 caracteres)
+        while (f.length < 5) {
+             f = generateRestrictedFormula(0, 3);
+        }
+        
+        setFormula(f);
+        generateTable(f);
+    };
 
   const checkTable = () => {
     const newRows = rows.map((r) => {
