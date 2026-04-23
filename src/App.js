@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrainCircuit, Code, CheckSquare, Table, ArrowRight, CheckCircle, RefreshCw, Eraser, MousePointerClick, ChevronDown, Lock, AlertTriangle, Play, Edit3, Eye, AlertCircle } from 'lucide-react';
+import { BrainCircuit, BookOpen, Code, CheckSquare, Table, ArrowRight, CheckCircle, RefreshCw, Eraser, MousePointerClick, ChevronDown, Lock, AlertTriangle, Play, Edit3, Eye, AlertCircle } from 'lucide-react';
 import CircuitSectionPro from './CircuitSectionPro';
+import StudyGuide2Section from './StudyGuide2Section';
 
 // --- CONSTANTS & CONFIG ---
 const SYMBOLS = {
@@ -1534,12 +1535,13 @@ export default function App() {
             
             <main className="max-w-6xl mx-auto px-4 mt-8">
                 {/* Navigation Tabs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-8">
                     {[
                         { id: 'syntax', icon: Code, label: 'Sintaxis' },
                         { id: 'evaluation', icon: CheckSquare, label: 'Evaluación' },
                         { id: 'satisfaction', icon: Table, label: 'Tablas de Verdad' },
                         { id: 'circuits', icon: BrainCircuit, label: 'Circuitos' },
+                        { id: 'studyguide2', icon: BookOpen, label: 'Guia 2' },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -1561,6 +1563,7 @@ export default function App() {
                     {activeTab === 'evaluation' && <EvaluationSection />}
                     {activeTab === 'satisfaction' && <SatisfactionSection />}
                     {activeTab === 'circuits' && <CircuitSectionPro />}
+                    {activeTab === 'studyguide2' && <StudyGuide2Section />}
                 </div>
             </main>
         </div>
