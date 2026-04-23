@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrainCircuit, Code, CheckSquare, Table, ArrowRight, CheckCircle, RefreshCw, Eraser, MousePointerClick, ChevronDown, Lock, AlertTriangle, Play, Edit3, Eye, AlertCircle } from 'lucide-react';
+import CircuitSectionPro from './CircuitSectionPro';
 
 // --- CONSTANTS & CONFIG ---
 const SYMBOLS = {
@@ -1559,7 +1560,7 @@ export default function App() {
                     {activeTab === 'syntax' && <SyntaxSection />}
                     {activeTab === 'evaluation' && <EvaluationSection />}
                     {activeTab === 'satisfaction' && <SatisfactionSection />}
-                    {activeTab === 'circuits' && <CircuitSection />}
+                    {activeTab === 'circuits' && <CircuitSectionPro />}
                 </div>
             </main>
         </div>
