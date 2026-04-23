@@ -611,17 +611,40 @@ const createCircuitChallenge = () => {
 // --- COMPONENTS ---
 
 const Header = () => (
-    <header className="bg-slate-900 text-white p-6 shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <BrainCircuit className="w-8 h-8 text-indigo-400" />
-                    LogiMaster Pro by Luis Caballero
-                </h1>
-                <p className="text-slate-400 text-sm mt-1">Entrenador Avanzado de Lógica</p>
-            </div>
-            <div className="text-right text-xs text-slate-500 hidden md:block">
-                <p>Prioridad: {SYMBOLS.NOT} &gt; {SYMBOLS.AND} &gt; {SYMBOLS.OR} &gt; {SYMBOLS.IMP} &gt; {SYMBOLS.IFF}</p>
+    <header className="mx-auto mt-6 max-w-6xl px-4">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-900/10 bg-slate-950 text-white shadow-[0_30px_80px_rgba(15,23,42,0.32)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.42),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.18),transparent_28%)]" />
+            <div className="relative px-6 py-6 sm:px-8 lg:px-10">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.35em] text-white/80">
+                            Plataforma interactiva
+                        </div>
+                        <h1 className="mt-4 flex flex-wrap items-center gap-3 text-3xl font-black sm:text-4xl">
+                            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-indigo-300 ring-1 ring-white/10">
+                                <BrainCircuit className="h-6 w-6" />
+                            </span>
+                            LogiMaster Pro
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                            Entrenador moderno de lógica proposicional, circuitos digitales, cuantificadores y conjuntos. Todo en español y con práctica guiada.
+                        </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[420px]">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                            <div className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Jerarquía</div>
+                            <div className="mt-1 text-lg font-black text-white">{SYMBOLS.NOT} &gt; {SYMBOLS.AND} &gt; {SYMBOLS.OR}</div>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                            <div className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Módulos</div>
+                            <div className="mt-1 text-lg font-black text-white">5 áreas</div>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                            <div className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Idioma</div>
+                            <div className="mt-1 text-lg font-black text-white">Español</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -640,12 +663,12 @@ const LogicKeyboard = ({ onInsert, extras = [], vars = VARS }) => {
         ...extras
     ];
     return (
-        <div className="flex flex-wrap gap-2 my-2 p-2 bg-slate-100 rounded-lg border border-slate-200 justify-center">
+        <div className="glass-panel flex flex-wrap justify-center gap-2 p-3">
             {keys.map((k) => (
                 <button
                     key={k.char}
                     onClick={() => onInsert(k.char)}
-                    className="bg-white hover:bg-indigo-50 text-slate-800 border border-slate-300 px-3 py-2 rounded shadow-sm text-base font-mono font-bold transition active:scale-95"
+                    className="bg-white/90 hover:bg-indigo-50 text-slate-800 border border-slate-200 px-3 py-2 rounded-xl shadow-sm text-base font-mono font-bold transition active:scale-95"
                 >
                     {k.char}
                 </button>
@@ -792,7 +815,7 @@ const SyntaxSection = () => {
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow border border-slate-200 text-center">
+            <div className="glass-panel p-6 text-center">
                 <div className="flex justify-center mb-4">
                      <LogicKeyboard onInsert={handleInsert} />
                 </div>
@@ -824,7 +847,7 @@ const SyntaxSection = () => {
                     {status === 'correct' && <p className="text-green-600 font-bold text-lg animate-bounce">¡Perfecto! Agrupación correcta.</p>}
                     {status === 'error' && (
                         <div className="inline-flex items-center gap-2 text-red-600 font-bold bg-red-50 px-4 py-2 rounded animate-shake">
-                            <AlertCircle className="w-5 h-5" />
+                            <AlertCircle className="h-5 w-5 transition group-hover:scale-105" />
                             <span>{errorMsg || "Error en la estructura."}</span>
                         </div>
                     )}
@@ -946,7 +969,7 @@ const EvaluationSection = () => {
                 </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+            <div className="glass-panel p-6">
                 <div className="flex flex-wrap justify-center gap-3 mb-8 bg-slate-100 p-3 rounded-lg">
                     {Object.entries(variables).map(([k, v]) => (
                         <div key={k} className={`px-3 py-1 rounded font-mono font-bold border ${v === '1' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300'}`}>
@@ -1170,7 +1193,7 @@ const SatisfactionSection = () => {
                 </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+            <div className="glass-panel p-6">
                 <div className="flex flex-col gap-4 mb-6">
                     <div className="flex gap-2">
                         <input 
@@ -1180,7 +1203,7 @@ const SatisfactionSection = () => {
                             placeholder="Ej: (P ∨ Q) ⇒ R"
                         />
                         <button onClick={handleGenerate} className="bg-amber-500 text-white px-4 rounded font-bold hover:bg-amber-600 transition flex items-center gap-2">
-                            <RefreshCw className="w-5 h-5" /> Generar
+                            <RefreshCw className="h-5 w-5 transition group-hover:scale-105" /> Generar
                         </button>
                     </div>
                     <LogicKeyboard onInsert={handleInsert} />
@@ -1234,7 +1257,7 @@ const SatisfactionSection = () => {
                 {rows.length > 0 && (
                     <div className="mt-6 flex justify-end">
                         <button onClick={checkTable} className="bg-indigo-600 text-white px-8 py-3 rounded font-bold hover:bg-indigo-700 shadow-lg transition flex items-center gap-2">
-                            <CheckCircle className="w-5 h-5" /> Verificar Tabla
+                            <CheckCircle className="h-5 w-5 transition group-hover:scale-105" /> Verificar Tabla
                         </button>
                     </div>
                 )}
@@ -1338,7 +1361,7 @@ const CircuitSection = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-violet-50 p-4 rounded border-l-4 border-violet-500">
+            <div className="glass-panel p-4">
                 <h3 className="text-violet-900 font-bold">Circuitos Digitales: de la puerta a la expresión</h3>
                 <p className="text-sm text-violet-800">
                     Observa el circuito, nombra las salidas intermedias y escribe la expresión completa de la salida <strong>Q</strong>.
@@ -1346,7 +1369,7 @@ const CircuitSection = () => {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-                <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <div className="glass-panel p-6">
                     <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
                         <div>
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">Reto de circuito</p>
@@ -1388,7 +1411,7 @@ const CircuitSection = () => {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                    <div className="glass-panel p-6">
                         <h4 className="text-xl font-black text-slate-900">Escribe la salida</h4>
                         <p className="text-sm text-slate-500 mt-1">
                             Usa los símbolos {SYMBOLS.NOT}, {SYMBOLS.AND} y {SYMBOLS.OR}. La salida final se llama Q.
@@ -1454,7 +1477,7 @@ const CircuitSection = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                    <div className="glass-panel p-6">
                         <h4 className="text-lg font-black text-slate-900">Desglose del circuito</h4>
                         <div className="mt-4 space-y-3">
                             {challenge.steps.length === 0 ? (
@@ -1478,7 +1501,7 @@ const CircuitSection = () => {
                     </div>
 
                     {showSolution && (
-                        <div className="bg-slate-900 text-white p-6 rounded-lg shadow-lg border border-slate-700">
+                        <div className="glass-panel p-6 bg-slate-950 text-white">
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">Solución</p>
                             <div className="mt-3 font-mono text-xl text-green-400 break-words">
                                 Q = {challenge.expression}
@@ -1489,7 +1512,7 @@ const CircuitSection = () => {
             </div>
 
             {showTruthTable && (
-                <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <div className="glass-panel p-6">
                     <h4 className="text-xl font-black text-slate-900">Tabla de verdad rápida</h4>
                     <p className="text-sm text-slate-500 mt-1">
                         Úsala para verificar si tu expresión produce exactamente la misma salida que el circuito.
@@ -1530,29 +1553,29 @@ export default function App() {
     const [activeTab, setActiveTab] = useState("syntax");
 
     return (
-        <div className="min-h-screen pb-12 bg-gray-100 font-sans text-slate-800">
+        <div className="min-h-screen pb-12 text-slate-800">
             <Header />
             
-            <main className="max-w-6xl mx-auto px-4 mt-8">
+            <main className="max-w-6xl mx-auto px-4 mt-8 space-y-6">
                 {/* Navigation Tabs */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-8">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
                     {[
                         { id: 'syntax', icon: Code, label: 'Sintaxis' },
                         { id: 'evaluation', icon: CheckSquare, label: 'Evaluación' },
                         { id: 'satisfaction', icon: Table, label: 'Tablas de Verdad' },
                         { id: 'circuits', icon: BrainCircuit, label: 'Circuitos' },
-                        { id: 'studyguide2', icon: BookOpen, label: 'Guia 2' },
+                        { id: 'studyguide2', icon: BookOpen, label: 'Guía 2' },
                     ].map(tab => (
                         <button 
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`p-3 rounded-lg font-bold text-sm md:text-base flex items-center justify-center gap-2 transition shadow-sm ${
+                            className={`group flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${
                                 activeTab === tab.id 
-                                ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-300 ring-offset-2' 
-                                : 'bg-white text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
+                                ? 'bg-slate-950 text-white shadow-lg shadow-slate-900/15 ring-1 ring-slate-950/10' 
+                                : 'bg-slate-50 text-slate-600 hover:-translate-y-0.5 hover:bg-white hover:text-slate-900'
                             }`}
                         >
-                            <tab.icon className="w-5 h-5" /> {tab.label}
+                            <tab.icon className="h-5 w-5 transition group-hover:scale-105" /> {tab.label}
                         </button>
                     ))}
                 </div>

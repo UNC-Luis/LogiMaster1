@@ -21,25 +21,25 @@ const TOPICS = [
     {
         id: 'equivalences',
         label: 'Equivalencias',
-        description: 'Simplify expressions by picking the equivalent result.',
+        description: 'Simplifica expresiones eligiendo el resultado equivalente.',
         accent: 'from-sky-600 via-cyan-500 to-teal-500',
     },
     {
         id: 'laws',
         label: 'Leyes',
-        description: 'Memorize the law names until they feel automatic.',
+        description: 'Memoriza los nombres de las leyes hasta que salgan automáticos.',
         accent: 'from-violet-600 via-fuchsia-500 to-pink-500',
     },
     {
         id: 'quantifiers',
         label: 'Cuantificadores',
-        description: 'Train universal and existential statements with tables.',
+        description: 'Practica enunciados universales y existenciales con tablas.',
         accent: 'from-amber-500 via-orange-500 to-rose-500',
     },
     {
         id: 'sets',
         label: 'Conjuntos',
-        description: 'Build set results by toggling the universe elements.',
+        description: 'Construye resultados de conjuntos activando los elementos del universo.',
         accent: 'from-emerald-600 via-lime-500 to-yellow-400',
     },
 ];
@@ -70,161 +70,161 @@ const LAW_LIBRARY = [
         family: 'Identidad',
         source: `__A__ ${LOGIC.AND} T`,
         target: '__A__',
-        explanation: 'T is the neutral element of conjunction.',
+        explanation: 'T es el elemento neutro de la conjunción.',
     },
     {
         id: 'identity_or',
         family: 'Identidad',
         source: `__A__ ${LOGIC.OR} F`,
         target: '__A__',
-        explanation: 'F is the neutral element of disjunction.',
+        explanation: 'F es el elemento neutro de la disyunción.',
     },
     {
         id: 'domination_or',
-        family: 'Dominacion',
+        family: 'Dominación',
         source: `__A__ ${LOGIC.OR} T`,
         target: 'T',
-        explanation: 'T dominates disjunction.',
+        explanation: 'T domina la disyunción.',
     },
     {
         id: 'domination_and',
-        family: 'Dominacion',
+        family: 'Dominación',
         source: `__A__ ${LOGIC.AND} F`,
         target: 'F',
-        explanation: 'F dominates conjunction.',
+        explanation: 'F domina la conjunción.',
     },
     {
         id: 'idempotence_and',
         family: 'Idempotencia',
         source: `__A__ ${LOGIC.AND} __A__`,
         target: '__A__',
-        explanation: 'Repeating the same proposition does not change the result.',
+        explanation: 'Repetir la misma proposición no cambia el resultado.',
     },
     {
         id: 'idempotence_or',
         family: 'Idempotencia',
         source: `__A__ ${LOGIC.OR} __A__`,
         target: '__A__',
-        explanation: 'Repeating the same proposition does not change the result.',
+        explanation: 'Repetir la misma proposición no cambia el resultado.',
     },
     {
         id: 'double_negation',
-        family: 'Doble negacion',
+        family: 'Doble negación',
         source: `${LOGIC.NOT}${LOGIC.NOT}__A__`,
         target: '__A__',
-        explanation: 'Two negations cancel each other out.',
+        explanation: 'Dos negaciones se cancelan.',
     },
     {
         id: 'neg_true',
         family: 'Constantes',
         source: `${LOGIC.NOT}T`,
         target: 'F',
-        explanation: 'The negation of true is false.',
+        explanation: 'La negación de verdadero es falso.',
     },
     {
         id: 'neg_false',
         family: 'Constantes',
         source: `${LOGIC.NOT}F`,
         target: 'T',
-        explanation: 'The negation of false is true.',
+        explanation: 'La negación de falso es verdadero.',
     },
     {
         id: 'excluded_middle',
         family: 'Tercero excluido',
         source: `__A__ ${LOGIC.OR} ${LOGIC.NOT}__A__`,
         target: 'T',
-        explanation: 'A proposition or its negation is always true.',
+        explanation: 'Una proposición o su negación siempre es verdadera.',
     },
     {
         id: 'contradiction',
-        family: 'Contradiccion',
+        family: 'Contradicción',
         source: `__A__ ${LOGIC.AND} ${LOGIC.NOT}__A__`,
         target: 'F',
-        explanation: 'A proposition and its negation cannot both be true.',
+        explanation: 'Una proposición y su negación no pueden ser verdaderas a la vez.',
     },
     {
         id: 'commutative_and',
         family: 'Conmutativa',
         source: `__A__ ${LOGIC.AND} __B__`,
         target: `__B__ ${LOGIC.AND} __A__`,
-        explanation: 'The order of AND does not matter.',
+        explanation: 'El orden de AND no importa.',
     },
     {
         id: 'commutative_or',
         family: 'Conmutativa',
         source: `__A__ ${LOGIC.OR} __B__`,
         target: `__B__ ${LOGIC.OR} __A__`,
-        explanation: 'The order of OR does not matter.',
+        explanation: 'El orden de OR no importa.',
     },
     {
         id: 'associative_and',
         family: 'Asociativa',
         source: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.AND} __C__`,
         target: `__A__ ${LOGIC.AND} (__B__ ${LOGIC.AND} __C__)`,
-        explanation: 'Grouping does not matter when the operator is the same.',
+        explanation: 'El agrupamiento no importa cuando el operador es el mismo.',
     },
     {
         id: 'associative_or',
         family: 'Asociativa',
         source: `(__A__ ${LOGIC.OR} __B__) ${LOGIC.OR} __C__`,
         target: `__A__ ${LOGIC.OR} (__B__ ${LOGIC.OR} __C__)`,
-        explanation: 'Grouping does not matter when the operator is the same.',
+        explanation: 'El agrupamiento no importa cuando el operador es el mismo.',
     },
     {
         id: 'distributive_and',
         family: 'Distributiva',
         source: `__A__ ${LOGIC.AND} (__B__ ${LOGIC.OR} __C__)`,
         target: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.OR} (__A__ ${LOGIC.AND} __C__)`,
-        explanation: 'AND distributes over OR.',
+        explanation: 'AND distribuye sobre OR.',
     },
     {
         id: 'distributive_or',
         family: 'Distributiva',
         source: `__A__ ${LOGIC.OR} (__B__ ${LOGIC.AND} __C__)`,
         target: `(__A__ ${LOGIC.OR} __B__) ${LOGIC.AND} (__A__ ${LOGIC.OR} __C__)`,
-        explanation: 'OR distributes over AND.',
+        explanation: 'OR distribuye sobre AND.',
     },
     {
         id: 'de_morgan_and',
         family: 'De Morgan',
         source: `${LOGIC.NOT}(__A__ ${LOGIC.AND} __B__)`,
         target: `${LOGIC.NOT}__A__ ${LOGIC.OR} ${LOGIC.NOT}__B__`,
-        explanation: 'Negating AND changes it into OR and negates each side.',
+        explanation: 'Negar AND lo convierte en OR y niega cada lado.',
     },
     {
         id: 'de_morgan_or',
         family: 'De Morgan',
         source: `${LOGIC.NOT}(__A__ ${LOGIC.OR} __B__)`,
         target: `${LOGIC.NOT}__A__ ${LOGIC.AND} ${LOGIC.NOT}__B__`,
-        explanation: 'Negating OR changes it into AND and negates each side.',
+        explanation: 'Negar OR lo convierte en AND y niega cada lado.',
     },
     {
         id: 'absorption_or',
-        family: 'Absorcion',
+        family: 'Absorción',
         source: `__A__ ${LOGIC.OR} (__A__ ${LOGIC.AND} __B__)`,
         target: '__A__',
-        explanation: 'A absorbs A AND B in OR form.',
+        explanation: 'A absorbe A AND B en forma OR.',
     },
     {
         id: 'absorption_and',
-        family: 'Absorcion',
+        family: 'Absorción',
         source: `__A__ ${LOGIC.AND} (__A__ ${LOGIC.OR} __B__)`,
         target: '__A__',
-        explanation: 'A absorbs A OR B in AND form.',
+        explanation: 'A absorbe A OR B en forma AND.',
     },
     {
         id: 'implication',
-        family: 'Implicacion',
+        family: 'Implicación',
         source: `__A__ ${LOGIC.IMP} __B__`,
         target: `${LOGIC.NOT}__A__ ${LOGIC.OR} __B__`,
-        explanation: 'Implication is equivalent to NOT A OR B.',
+        explanation: 'La implicación es equivalente a NOT A OR B.',
     },
     {
         id: 'biconditional',
         family: 'Bicondicional',
         source: `__A__ ${LOGIC.IFF} __B__`,
         target: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.OR} (${LOGIC.NOT}__A__ ${LOGIC.AND} ${LOGIC.NOT}__B__)`,
-        explanation: 'A biconditional is true when both sides match.',
+        explanation: 'Una bicondicional es verdadera cuando ambos lados coinciden.',
     },
 ];
 
@@ -356,14 +356,14 @@ const makeUnaryTruthChallenge = () => {
 
     return {
         kind: 'truth',
-        title: 'Truth Check',
-        prompt: `Is ${statement} true in this domain?`,
+        title: 'Comprobación de verdad',
+        prompt: `¿Es ${statement} verdadera en este dominio?`,
         statement,
-        answer: answer ? 'True' : 'False',
-        options: ['True', 'False'],
+        answer: answer ? 'Verdadero' : 'Falso',
+        options: ['Verdadero', 'Falso'],
         explanation: quantifier === '∀'
-            ? 'A universal statement is true only if every element satisfies the predicate.'
-            : 'An existential statement is true if at least one element satisfies the predicate.',
+            ? 'Un enunciado universal es verdadero solo si cada elemento satisface el predicado.'
+            : 'Un enunciado existencial es verdadero si al menos un elemento satisface el predicado.',
         domain: QUANTIFIER_DOMAIN,
         predicate,
     };
@@ -372,16 +372,16 @@ const makeUnaryTruthChallenge = () => {
 const makeEmptyDomainChallenge = () => {
     const quantifier = pick(['∀', '∃']);
     const statement = `${quantifier}x P(x)`;
-    const answer = quantifier === '∀' ? 'True' : 'False';
+    const answer = quantifier === '∀' ? 'Verdadero' : 'Falso';
 
     return {
         kind: 'empty',
-        title: 'Empty Domain',
-        prompt: `What is the truth value of ${statement} when the domain is empty?`,
+        title: 'Dominio vacío',
+        prompt: `¿Cuál es el valor de verdad de ${statement} cuando el dominio está vacío?`,
         statement,
         answer,
-        options: ['True', 'False'],
-        explanation: 'Universal statements over an empty domain are true, while existential statements are false.',
+        options: ['Verdadero', 'Falso'],
+        explanation: 'Las universales sobre un dominio vacío son verdaderas; las existenciales son falsas.',
         domain: [],
         predicate: {},
     };
@@ -401,12 +401,12 @@ const makeNegationChallenge = () => {
 
     return {
         kind: 'negation',
-        title: 'De Morgan for Quantifiers',
-        prompt: `Choose the equivalent form of ${statement}.`,
+        title: 'De Morgan para cuantificadores',
+        prompt: `Elige la forma equivalente de ${statement}.`,
         statement,
         answer,
         options,
-        explanation: 'Negating a universal becomes existential, and negating an existential becomes universal.',
+        explanation: 'Negar una universal la convierte en existencial, y negar una existencial la convierte en universal.',
     };
 };
 
@@ -419,14 +419,14 @@ const makeNestedQuantifierChallenge = () => {
 
     return {
         kind: 'nested',
-        title: 'Nested Quantifiers',
-        prompt: `Is ${statement} true for the relation shown?`,
+        title: 'Cuantificadores anidados',
+        prompt: `¿Es ${statement} verdadera para la relación mostrada?`,
         statement,
-        answer: answer ? 'True' : 'False',
-        options: ['True', 'False'],
+        answer: answer ? 'Verdadero' : 'Falso',
+        options: ['Verdadero', 'Falso'],
         explanation: statement === '∀x ∃y R(x,y)'
-            ? 'Every row needs at least one true cell.'
-            : 'Some column must be true for every row.',
+            ? 'Cada fila necesita al menos una celda verdadera.'
+            : 'Alguna columna debe ser verdadera para cada fila.',
         matrix,
     };
 };
@@ -458,7 +458,7 @@ const SET_OPERATIONS = [
         id: 'intersection',
         label: 'Intersection',
         symbol: SET_SYMBOLS.INTERSECTION,
-        description: 'Element belongs only if it is in both sets.',
+        description: 'El elemento pertenece solo si está en ambos conjuntos.',
         compute: (A, B) => A.filter((value) => B.includes(value)).sort(),
         question: (A, B) => `Build A ${SET_SYMBOLS.INTERSECTION} B.`,
     },
@@ -482,7 +482,7 @@ const SET_OPERATIONS = [
         id: 'symmetric',
         label: 'Symmetric diff',
         symbol: SET_SYMBOLS.SYMDIFF,
-        description: 'Keep the elements that are in exactly one set.',
+        description: 'Conserva los elementos que están en exactamente un conjunto.',
         compute: (A, B) => unique([
             ...A.filter((value) => !B.includes(value)),
             ...B.filter((value) => !A.includes(value)),
@@ -560,7 +560,7 @@ const TopicButton = ({ topic, active, onClick }) => (
 );
 
 const GameShell = ({ topic, title, description, stats, action, children }) => (
-    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+    <section className="glass-panel overflow-hidden">
         <div className={`bg-gradient-to-r ${topic.accent} px-6 py-5 text-white`}>
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -634,12 +634,12 @@ const EquivalenceGame = ({ visible }) => {
         <div className={visible ? 'block' : 'hidden'}>
             <GameShell
                 topic={TOPICS[0]}
-                title="Quick Equivalence Run"
-                description="Pick the expression that is equivalent to the one on screen. This keeps the simplification drill short, repeatable, and fast."
+                title="Reto rápido de equivalencias"
+                description="Elige la expresión equivalente a la que aparece en pantalla. Este ejercicio mantiene la simplificación corta, repetible y ágil."
                 stats={[
-                    { label: 'Score', value: score },
-                    { label: 'Streak', value: streak },
-                    { label: 'Type', value: 'Pick the result' },
+                    { label: 'Puntaje', value: score },
+                    { label: 'Racha', value: streak },
+                    { label: 'Tipo', value: 'Elige el resultado' },
                 ]}
                 action={(
                     <button
@@ -648,33 +648,33 @@ const EquivalenceGame = ({ visible }) => {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/25"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        New puzzle
+                        Nuevo reto
                     </button>
                 )}
             >
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Expression</div>
+                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Expresión</div>
                             <div className="mt-3 rounded-2xl bg-white px-4 py-5 font-mono text-lg font-black text-slate-900 shadow-sm">
                                 {challenge.source}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800">Goal: simplify</span>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Law family: {challenge.family}</span>
+                                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800">Meta: simplificar</span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Familia de ley: {challenge.family}</span>
                             </div>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                            <div className="text-sm font-black text-slate-900">Why this is good practice</div>
+                            <div className="text-sm font-black text-slate-900">Por qué sirve</div>
                             <p className="mt-2 text-sm text-slate-600">
-                                The same small laws appear again and again. This drill keeps them moving fast so students memorize the shape and the result.
+                                Las mismas leyes pequeñas aparecen una y otra vez. Este ejercicio las repite rápido para que los estudiantes memoricen la forma y el resultado.
                             </p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">Choose the equivalent result</div>
+                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">Elige el resultado equivalente</div>
                         <ChoiceGrid
                             options={challenge.options}
                             onPick={submit}
@@ -689,12 +689,12 @@ const EquivalenceGame = ({ visible }) => {
                                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                                     : 'border-slate-200 bg-slate-50 text-slate-500'
                         }`}>
-                            {feedback || 'Pick an answer to start the drill.'}
+                            {feedback || 'Elige una respuesta para empezar.'}
                         </div>
 
                         {solved && (
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Answer</div>
+                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Respuesta</div>
                                 <div className="mt-2 font-mono text-sm text-slate-900">{challenge.source}  =  {challenge.target}</div>
                             </div>
                         )}
@@ -740,12 +740,12 @@ const LawGame = ({ visible }) => {
         <div className={visible ? 'block' : 'hidden'}>
             <GameShell
                 topic={TOPICS[1]}
-                title="Law Memory Sprint"
-                description="See a law pattern and identify the law family. The repetition helps students memorize the whole list without getting bored."
+                title="Sprint de leyes"
+                description="Observa un patrón de ley e identifica su familia. La repetición ayuda a memorizar toda la lista sin aburrirse."
                 stats={[
-                    { label: 'Score', value: score },
-                    { label: 'Streak', value: streak },
-                    { label: 'Focus', value: 'Law name' },
+                    { label: 'Puntaje', value: score },
+                    { label: 'Racha', value: streak },
+                    { label: 'Enfoque', value: 'Nombre de ley' },
                 ]}
                 action={(
                     <button
@@ -754,33 +754,33 @@ const LawGame = ({ visible }) => {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/25"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        New card
+                        Nueva tarjeta
                     </button>
                 )}
             >
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Law card</div>
+                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Tarjeta de ley</div>
                             <div className="mt-3 rounded-2xl bg-white px-4 py-5 font-mono text-lg font-black text-slate-900 shadow-sm">
                                 {challenge.source}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">Target: {challenge.target}</span>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Family: {challenge.family}</span>
+                                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">Objetivo: {challenge.target}</span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Familia: {challenge.family}</span>
                             </div>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                            <div className="text-sm font-black text-slate-900">Teacher tip</div>
+                            <div className="text-sm font-black text-slate-900">Consejo del profe</div>
                             <p className="mt-2 text-sm text-slate-600">
-                                Read the pattern out loud. Students remember laws better when they say the form and the name together.
+                                Lee el patrón en voz alta. Los estudiantes recuerdan mejor las leyes cuando dicen la forma y el nombre juntos.
                             </p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">Which law is it?</div>
+                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">¿Qué ley es?</div>
                         <ChoiceGrid
                             options={challenge.options}
                             onPick={submit}
@@ -795,7 +795,7 @@ const LawGame = ({ visible }) => {
                                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                                     : 'border-slate-200 bg-slate-50 text-slate-500'
                         }`}>
-                            {feedback || 'Pick the law family that matches the formula.'}
+                            {feedback || 'Elige la familia de ley que coincide con la fórmula.'}
                         </div>
                     </div>
                 </div>
@@ -808,12 +808,12 @@ const QuantifierVisual = ({ challenge }) => {
     if (challenge.kind === 'negation') {
         return (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Rule card</div>
+                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Tarjeta de regla</div>
                 <div className="mt-3 rounded-2xl bg-white px-4 py-5 font-mono text-lg font-black text-slate-900 shadow-sm">
                     {challenge.statement}
                 </div>
                 <div className="mt-3 rounded-2xl bg-violet-50 p-4 text-sm text-violet-800">
-                    De Morgan for quantifiers swaps universal and existential statements.
+                    De Morgan para cuantificadores intercambia enunciados universales y existenciales.
                 </div>
             </div>
         );
@@ -822,12 +822,12 @@ const QuantifierVisual = ({ challenge }) => {
     if (challenge.kind === 'empty') {
         return (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Empty universe</div>
+                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Universo vacío</div>
                 <div className="mt-3 rounded-2xl bg-white px-4 py-5 font-mono text-lg font-black text-slate-900 shadow-sm">
                     U = {SET_SYMBOLS.EMPTY}
                 </div>
                 <div className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
-                    Universal statements are true here, existential statements are false.
+                    Las universales son verdaderas aquí; las existenciales son falsas.
                 </div>
             </div>
         );
@@ -836,7 +836,7 @@ const QuantifierVisual = ({ challenge }) => {
     if (challenge.kind === 'nested') {
         return (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Relation matrix</div>
+                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Matriz de relación</div>
                 <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <table className="w-full text-center text-sm">
                         <thead className="bg-slate-800 text-white">
@@ -869,7 +869,7 @@ const QuantifierVisual = ({ challenge }) => {
 
     return (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Domain view</div>
+            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Vista del dominio</div>
             <div className="mt-3 flex flex-wrap gap-2">
                 {challenge.domain.map((element) => (
                     <div
@@ -923,12 +923,12 @@ const QuantifierGame = ({ visible }) => {
         <div className={visible ? 'block' : 'hidden'}>
             <GameShell
                 topic={TOPICS[2]}
-                title="Quantifier Lab"
-                description="Practice universal and existential statements with quick, repeated questions. The goal is to make the symbols feel natural."
+                title="Laboratorio de cuantificadores"
+                description="Practica enunciados universales y existenciales con preguntas cortas y repetidas. El objetivo es que los símbolos se sientan naturales."
                 stats={[
-                    { label: 'Score', value: score },
-                    { label: 'Streak', value: streak },
-                    { label: 'Mode', value: challenge.kind },
+                    { label: 'Puntaje', value: score },
+                    { label: 'Racha', value: streak },
+                    { label: 'Modo', value: challenge.kind },
                 ]}
                 action={(
                     <button
@@ -937,7 +937,7 @@ const QuantifierGame = ({ visible }) => {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/25"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        New round
+                        Nueva ronda
                     </button>
                 )}
             >
@@ -945,13 +945,13 @@ const QuantifierGame = ({ visible }) => {
                     <div className="space-y-4">
                         <QuantifierVisual challenge={challenge} />
                         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                            <div className="text-sm font-black text-slate-900">Prompt</div>
+                            <div className="text-sm font-black text-slate-900">Consigna</div>
                             <p className="mt-2 text-sm text-slate-600">{challenge.prompt}</p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">Answer</div>
+                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">Respuesta</div>
                         <ChoiceGrid
                             options={challenge.options}
                             onPick={submit}
@@ -966,7 +966,7 @@ const QuantifierGame = ({ visible }) => {
                                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                                     : 'border-slate-200 bg-slate-50 text-slate-500'
                         }`}>
-                            {feedback || 'Choose the truth value or the equivalent formula.'}
+                            {feedback || 'Elige el valor de verdad o la fórmula equivalente.'}
                         </div>
                     </div>
                 </div>
@@ -1034,12 +1034,12 @@ const SetGame = ({ visible }) => {
         <div className={visible ? 'block' : 'hidden'}>
             <GameShell
                 topic={TOPICS[3]}
-                title="Set Builder"
-                description="Choose the elements that belong to the target set. This is a very visual way to learn unions, intersections, differences, complements, and symmetric difference."
+                title="Constructor de conjuntos"
+                description="Elige los elementos que pertenecen al conjunto objetivo. Es una forma muy visual de aprender uniones, intersecciones, diferencias, complementos y diferencia simétrica."
                 stats={[
-                    { label: 'Score', value: score },
-                    { label: 'Streak', value: streak },
-                    { label: 'Universe', value: challenge.universe.length },
+                    { label: 'Puntaje', value: score },
+                    { label: 'Racha', value: streak },
+                    { label: 'Universo', value: challenge.universe.length },
                 ]}
                 action={(
                     <button
@@ -1048,14 +1048,14 @@ const SetGame = ({ visible }) => {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/25"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        New set
+                        Nuevo conjunto
                     </button>
                 )}
             >
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Source sets</div>
+                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Conjuntos fuente</div>
                             <div className="mt-3 space-y-3">
                                 <div className="rounded-2xl border border-sky-200 bg-sky-50 p-3">
                                     <div className="text-sm font-black text-sky-800">A = {formatSet(challenge.A)}</div>
@@ -1065,7 +1065,7 @@ const SetGame = ({ visible }) => {
                                 </div>
                             </div>
                             <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
-                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Operation</div>
+                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Operación</div>
                                 <div className="mt-2 text-lg font-black text-slate-900">
                                     {challenge.prompt}
                                 </div>
@@ -1078,9 +1078,9 @@ const SetGame = ({ visible }) => {
 
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                            <div className="text-sm font-black text-slate-900">Build the answer set</div>
+                            <div className="text-sm font-black text-slate-900">Construye el conjunto respuesta</div>
                             <p className="mt-1 text-sm text-slate-500">
-                                Click the elements that should belong to the result. Then press check.
+                                Haz clic en los elementos que deben pertenecer al resultado. Luego presiona comprobar.
                             </p>
 
                             <div className="mt-4 flex flex-wrap gap-2">
@@ -1101,7 +1101,7 @@ const SetGame = ({ visible }) => {
                                     className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
                                 >
                                     <CheckCircle className="h-4 w-4" />
-                                    Check answer
+                                    Comprobar respuesta
                                 </button>
                                 <button
                                     type="button"
@@ -1109,7 +1109,7 @@ const SetGame = ({ visible }) => {
                                     className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
                                 >
                                     <Edit3 className="h-4 w-4" />
-                                    Clear
+                                    Limpiar
                                 </button>
                             </div>
                         </div>
@@ -1121,12 +1121,12 @@ const SetGame = ({ visible }) => {
                                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                                     : 'border-slate-200 bg-slate-50 text-slate-500'
                         }`}>
-                            {feedback || 'Select the result elements and check your set.'}
+                            {feedback || 'Selecciona los elementos del resultado y comprueba tu conjunto.'}
                         </div>
 
                         {solved && (
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Answer</div>
+                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Respuesta</div>
                                 <div className="mt-2 font-mono text-sm text-slate-900">{formatSet(challenge.answer)}</div>
                             </div>
                         )}
@@ -1149,21 +1149,21 @@ export default function StudyGuide2Section() {
                         <div className="max-w-3xl">
                             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.25em] text-white/80">
                                 <BookOpen className="h-4 w-4" />
-                                Guia de Estudio 2
+                                Guía de estudio 2
                             </div>
                             <h2 className="mt-4 text-3xl font-black sm:text-4xl">
                                 Equivalencias, leyes, cuantificadores y conjuntos
                             </h2>
                             <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
-                                I read the guide and turned the three topics into four small games. The drills stay simple and repetitive on purpose so the laws, quantifiers, and set ideas start to feel automatic.
+                                Leí la guía y convertí los tres temas en cuatro juegos pequeños. Los ejercicios se mantienen simples y repetitivos a propósito para que las leyes, los cuantificadores y los conjuntos se vuelvan automáticos.
                             </p>
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                            <StatPill label="Games" value="4" />
-                            <StatPill label="Goal" value="Practice" />
-                            <StatPill label="Style" value="Repetitive" />
-                            <StatPill label="Focus" value="Memorize" />
+                            <StatPill label="Juegos" value="4" />
+                            <StatPill label="Objetivo" value="Práctica" />
+                            <StatPill label="Estilo" value="Repetitivo" />
+                            <StatPill label="Enfoque" value="Memorizar" />
                         </div>
                     </div>
                 </div>

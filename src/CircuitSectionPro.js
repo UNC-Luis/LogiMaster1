@@ -10,22 +10,22 @@ const SYMBOLS = {
 
 const MODE_OPTIONS = {
     simple: {
-        label: 'Simple',
-        description: '2 entradas, 2-4 puertas',
+        label: 'Básica',
+        description: '2 entradas, 2 a 4 compuertas',
         inputs: ['A', 'B'],
         gateRange: [2, 4],
         weights: { AND: 0.44, OR: 0.2, XOR: 0.2, NOT: 0.16 },
     },
     complex: {
         label: 'Compleja',
-        description: '3 entradas, 5-8 puertas',
+        description: '3 entradas, 5 a 8 compuertas',
         inputs: ['A', 'B', 'C'],
         gateRange: [5, 8],
         weights: { AND: 0.32, OR: 0.24, XOR: 0.26, NOT: 0.18 },
     },
     mixed: {
         label: 'Mixta',
-        description: 'Mezcla de simple y compleja',
+        description: 'Mezcla de básica y compleja',
     },
 };
 
@@ -356,13 +356,13 @@ const expressionsEquivalent = (expectedExpr, userExpr, vars) => {
     try {
         parseFormula(expectedExpr);
     } catch (error) {
-        return { valid: false, equivalent: false, reason: 'La solucion del circuito no es valida.' };
+        return { valid: false, equivalent: false, reason: 'La solución del circuito no es válida.' };
     }
 
     try {
         parseFormula(userExpr);
     } catch (error) {
-        return { valid: false, equivalent: false, reason: 'Tu expresion tiene errores de sintaxis.' };
+        return { valid: false, equivalent: false, reason: 'Tu expresión tiene errores de sintaxis.' };
     }
 
     const count = 1 << vars.length;
@@ -373,7 +373,7 @@ const expressionsEquivalent = (expectedExpr, userExpr, vars) => {
             values[v] = !!((i >> shift) & 1);
         });
         if (evaluateFormula(expectedExpr, values) !== evaluateFormula(userExpr, values)) {
-            return { valid: true, equivalent: false, reason: 'Tu expresion no coincide con el circuito.' };
+            return { valid: true, equivalent: false, reason: 'Tu expresión no coincide con el circuito.' };
         }
     }
 
@@ -593,7 +593,7 @@ const GateSymbol = ({ node, value, interactive = false, onToggle = null }) => {
                 onClick={interactive && onToggle ? onToggle : undefined}
                 onKeyDown={handleKeyDown}
                 role={interactive ? 'button' : undefined}
-                aria-label={interactive ? `Toggle ${node.name}` : undefined}
+                aria-label={interactive ? `Alternar ${node.name}` : undefined}
                 tabIndex={interactive ? 0 : undefined}
                 style={{ cursor: interactive ? 'pointer' : 'default' }}
             >
@@ -621,7 +621,7 @@ const GateSymbol = ({ node, value, interactive = false, onToggle = null }) => {
                     {node.name}
                 </text>
                 <text x={width - 30} y={midY + 5} textAnchor="middle" fontSize="11" fontWeight="900" fill={stroke}>
-                    {value ? 'ON' : 'OFF'}
+                    {value ? '1' : '0'}
                 </text>
             </g>
         );
@@ -803,7 +803,7 @@ const CircuitSectionPro = () => {
         const trimmed = answer.trim();
         if (!trimmed) {
             setStatus('error');
-            setFeedback('Escribe una expresion para la salida Q.');
+            setFeedback('Escribe una expresión para la salida Q.');
             return;
         }
 
@@ -819,8 +819,8 @@ const CircuitSectionPro = () => {
             setStatus('correct');
             setFeedback(
                 exact
-                    ? 'Perfecto. Tu expresion coincide exactamente con el circuito.'
-                    : 'Muy bien. Tu expresion es equivalente al circuito.'
+                    ? 'Perfecto. Tu expresión coincide exactamente con el circuito.'
+                    : 'Muy bien. Tu expresión es equivalente al circuito.'
             );
             setShowSolution(true);
         } else {
@@ -857,7 +857,7 @@ const CircuitSectionPro = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-violet-50 p-4 rounded border-l-4 border-violet-500">
+            <div className="glass-panel p-4">
                 <h3 className="text-violet-900 font-bold">Circuitos digitales</h3>
                 <p className="text-sm text-violet-800">
                     Observa el circuito como en un esquema real, usa los interruptores para cambiar las entradas y nombra las salidas intermedias con letras como x, y o z.
@@ -869,7 +869,7 @@ const CircuitSectionPro = () => {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-                <div className="bg-white rounded-lg shadow border border-slate-200 p-4">
+                <div className="glass-panel p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div>
                             <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold">Generador</p>
@@ -895,19 +895,19 @@ const CircuitSectionPro = () => {
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                         <button
                             onClick={() => loadChallenge(mode)}
-                            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2"
                         >
                             <RefreshCw className="w-4 h-4" /> Generar circuito
                         </button>
                         <button
                             onClick={randomizeInputs}
-                            className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                            className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl font-bold transition flex items-center gap-2"
                         >
                             <Play className="w-4 h-4" /> Aleatorizar entradas
                         </button>
                         <button
                             onClick={fillSuggestedLabels}
-                            className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                            className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-xl font-bold transition flex items-center gap-2"
                         >
                             <Edit3 className="w-4 h-4" /> Sugerir x, y, z
                         </button>
@@ -933,10 +933,10 @@ const CircuitSectionPro = () => {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold">
-                                    Interactua con el circuito
+                                    Interactúa con el circuito
                                 </p>
                                 <p className="text-sm text-slate-500">
-                                    Haz clic en A, B o C dentro del esquema para cambiar su estado. Tambien puedes usar ⊕ o ^ como XOR al escribir la expresion.
+                                    Haz clic en A, B o C dentro del esquema para cambiar su estado. También puedes usar ⊕ o ^ como XOR al escribir la expresión.
                                 </p>
                             </div>
                         </div>
@@ -1059,8 +1059,8 @@ const CircuitSectionPro = () => {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-white rounded-lg shadow border border-slate-200 p-4">
-                        <h4 className="text-xl font-black text-slate-900">Escribe la expresion total</h4>
+                    <div className="glass-panel p-4">
+                        <h4 className="text-xl font-black text-slate-900">Escribe la expresión total</h4>
                         <p className="text-sm text-slate-500 mt-1">
                             La respuesta final debe usar solo las entradas del circuito. Primero usa las etiquetas intermedias para pensar el circuito.
                         </p>
@@ -1120,7 +1120,7 @@ const CircuitSectionPro = () => {
                                     onClick={() => setShowSolution(prev => !prev)}
                                     className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-5 py-3 rounded-xl font-bold transition flex items-center gap-2"
                                 >
-                                    <Eye className="w-4 h-4" /> {showSolution ? 'Ocultar' : 'Ver solucion'}
+                                    <Eye className="w-4 h-4" /> {showSolution ? 'Ocultar' : 'Ver solución'}
                                 </button>
                                 <button
                                     onClick={() => setShowTruthTable(prev => !prev)}
@@ -1144,7 +1144,7 @@ const CircuitSectionPro = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow border border-slate-200 p-4">
+                    <div className="glass-panel p-4">
                         <h4 className="text-lg font-black text-slate-900">Expresiones por etiqueta</h4>
                         <p className="text-sm text-slate-500 mt-1">
                             Estas lineas cambian segun las etiquetas que escribas.
@@ -1164,8 +1164,8 @@ const CircuitSectionPro = () => {
                     </div>
 
                     {showSolution && (
-                        <div className="bg-slate-900 text-white rounded-lg shadow-lg p-4">
-                            <div className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold">Solucion</div>
+                        <div className="glass-panel p-4 bg-slate-950 text-white">
+                            <div className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold">Solución</div>
                             <div className="mt-3 font-mono text-lg text-emerald-400 break-words">
                                 Q = {topLevelEquation}
                             </div>
@@ -1173,7 +1173,7 @@ const CircuitSectionPro = () => {
                     )}
 
                     {showTruthTable && (
-                        <div className="bg-white rounded-lg shadow border border-slate-200 p-4">
+                        <div className="glass-panel p-4">
                             <h4 className="text-lg font-black text-slate-900">Tabla de verdad</h4>
                             <div className="mt-4 overflow-x-auto">
                                 <table className="w-full text-center border-collapse">

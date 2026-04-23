@@ -1,14 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html,
-body,
-#root {
-  min-height: 100%;
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    color: #0f172a;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 30%),
+      radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 26%),
+      radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent 22%),
+      linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    background: rgba(99, 102, 241, 0.22);
+    color: #0f172a;
+  }
 }
 
-body {
-  margin: 0;
-  background: #f8fafc;
+@layer components {
+.glass-panel {
+    @apply rounded-3xl border border-white/70 bg-white/90 shadow-2xl backdrop-blur-sm;
+  }
+
+  .soft-panel {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-lg;
+  }
 }
