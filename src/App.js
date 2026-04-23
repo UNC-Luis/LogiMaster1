@@ -11,6 +11,7 @@ const SYMBOLS = {
 };
 
 const VARS = ['P', 'Q', 'R', 'S', 'T', 'U'];
+const CIRCUIT_INPUTS = ['A', 'B', 'C'];
 
 const PRECEDENCE = {
     [SYMBOLS.NOT]: 5,
@@ -239,6 +240,127 @@ const evaluateOp = (left, op, right) => {
 
 const evaluateNot = (val) => val === '1' ? '0' : '1';
 
+const tokenizeFormula = (formula) => formula.replace(/\s/g, '').split(/([¬∧∨⇒⇔()])/).filter(t => t);
+
+const containsErrorNode = (node) => {
+    if (!node) return true;
+    if (node.type === 'ATOM') return node.value === 'ERR';
+    if (node.type === 'NOT') return containsErrorNode(node.left);
+    return containsErrorNode(node.left) || containsErrorNode(node.right);
+};
+
+const findMatchingParenIndex = (tokens, openIdx) => {
+    let depth = 0;
+    for (let i = openIdx; i < tokens.length; i++) {
+        if (tokens[i] === '(') depth++;
+        else if (tokens[i] === ')') {
+            depth--;
+            if (depth === 0) return i;
+        }
+    }
+    return -1;
+};
+
+const isResolvedValueAst = (ast) => !containsErrorNode(ast) && ast?.type === 'ATOM' && (ast.value === '0' || ast.value === '1');
+
+const getEvaluationRedexes = (tokens) => {
+    const candidates = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+
+        if (token === SYMBOLS.NOT) {
+            const next = tokens[i + 1];
+
+            if (next === '(') {
+                const endIdx = findMatchingParenIndex(tokens, i + 1);
+                if (endIdx !== -1) {
+                    const inner = tokens.slice(i + 2, endIdx);
+                    try {
+                        const innerAst = parseToAST(inner);
+                        if (isResolvedValueAst(innerAst)) {
+                            candidates.push({ idx: i, op: token, prec: PRECEDENCE[token], kind: 'not-paren', endIdx });
+                        }
+                    } catch (e) {}
+                }
+            } else if (next === '0' || next === '1') {
+                candidates.push({ idx: i, op: token, prec: PRECEDENCE[token], kind: 'not-value' });
+            }
+        }
+
+        if ([SYMBOLS.AND, SYMBOLS.OR, SYMBOLS.IMP, SYMBOLS.IFF].includes(token)) {
+            const prev = tokens[i - 1];
+            const next = tokens[i + 1];
+            if ((prev === '0' || prev === '1') && (next === '0' || next === '1')) {
+                candidates.push({ idx: i, op: token, prec: PRECEDENCE[token], kind: 'binary' });
+            }
+        }
+    }
+
+    return candidates;
+};
+
+const getAllowedEvaluationRedexes = (tokens) => {
+    const candidates = getEvaluationRedexes(tokens);
+    if (candidates.length === 0) return [];
+
+    const maxPrec = Math.max(...candidates.map(c => c.prec));
+    const highest = candidates.filter(c => c.prec === maxPrec);
+    const highestOp = highest[0].op;
+
+    if (highestOp === SYMBOLS.NOT) {
+        return highest;
+    }
+
+    if (highestOp === SYMBOLS.AND || highestOp === SYMBOLS.OR) {
+        const chosen = highest.reduce((best, current) => (current.idx < best.idx ? current : best), highest[0]);
+        return [chosen];
+    }
+
+    if (highestOp === SYMBOLS.IMP || highestOp === SYMBOLS.IFF) {
+        const chosen = highest.reduce((best, current) => (current.idx > best.idx ? current : best), highest[0]);
+        return [chosen];
+    }
+
+    return highest;
+};
+
+const reduceEvaluationStep = (tokens, idx) => {
+    const token = tokens[idx];
+
+    if (token === SYMBOLS.NOT) {
+        const next = tokens[idx + 1];
+
+        if (next === '(') {
+            const endIdx = findMatchingParenIndex(tokens, idx + 1);
+            if (endIdx !== -1) {
+                const inner = tokens.slice(idx + 2, endIdx);
+                const innerAst = parseToAST(inner);
+                if (isResolvedValueAst(innerAst)) {
+                    const result = evaluateNot(innerAst.value);
+                    return [...tokens.slice(0, idx), result, ...tokens.slice(endIdx + 1)];
+                }
+            }
+        }
+
+        if (next === '0' || next === '1') {
+            const result = evaluateNot(next);
+            return [...tokens.slice(0, idx), result, ...tokens.slice(idx + 2)];
+        }
+    }
+
+    if ([SYMBOLS.AND, SYMBOLS.OR, SYMBOLS.IMP, SYMBOLS.IFF].includes(token)) {
+        const prev = tokens[idx - 1];
+        const next = tokens[idx + 1];
+        if ((prev === '0' || prev === '1') && (next === '0' || next === '1')) {
+            const result = evaluateOp(prev, token, next);
+            return [...tokens.slice(0, idx - 1), result, ...tokens.slice(idx + 2)];
+        }
+    }
+
+    return tokens;
+};
+
 const solveProposition = (formula, values) => {
     try {
         const tokens = formula.replace(/\s/g, '').split(/([¬∧∨⇒⇔()])/).filter(t => t);
@@ -268,6 +390,222 @@ const solveProposition = (formula, values) => {
     }
 };
 
+const parseFormulaAst = (formula) => {
+    const tokens = tokenizeFormula(formula);
+    const ast = parseToAST(tokens);
+    return containsErrorNode(ast) ? null : ast;
+};
+
+const isFormulaValid = (formula) => parseFormulaAst(formula) !== null;
+
+const solvePropositionSafe = (formula, values) => {
+    const ast = parseFormulaAst(formula);
+    if (!ast) return false;
+
+    const evalAST = (node) => {
+        if (node.type === 'ATOM') {
+            if (node.value === '1' || node.value === 'T') return true;
+            if (node.value === '0' || node.value === 'F') return false;
+            const key = node.value.toUpperCase();
+            return !!values[key];
+        }
+        if (node.type === 'NOT') return !evalAST(node.left);
+
+        const l = evalAST(node.left);
+        const r = evalAST(node.right);
+
+        if (node.value === SYMBOLS.AND) return l && r;
+        if (node.value === SYMBOLS.OR) return l || r;
+        if (node.value === SYMBOLS.IMP) return !l || r;
+        if (node.value === SYMBOLS.IFF) return l === r;
+        return false;
+    };
+
+    return evalAST(ast);
+};
+
+const shuffleArray = (items) => [...items].sort(() => Math.random() - 0.5);
+
+const pickCircuitInputs = () => {
+    const count = Math.random() < 0.6 ? 2 : 3;
+    return shuffleArray(CIRCUIT_INPUTS).slice(0, count).sort();
+};
+
+const createCircuitLeaf = (name) => ({ kind: 'INPUT', name, outputLabel: name });
+
+const createCircuitUnary = (child) => ({ kind: 'NOT', child, outputLabel: null });
+
+const createCircuitBinary = (kind, left, right) => ({ kind, left, right, outputLabel: null });
+
+const buildCircuitNode = (availableInputs, depth = 0, maxDepth = 2, forceGate = false) => {
+    const shouldEnd = !forceGate && (depth >= maxDepth || (depth > 0 && Math.random() < 0.3));
+    if (shouldEnd) {
+        const input = availableInputs[Math.floor(Math.random() * availableInputs.length)];
+        return createCircuitLeaf(input);
+    }
+
+    if (Math.random() < 0.25) {
+        return createCircuitUnary(buildCircuitNode(availableInputs, depth + 1, maxDepth, false));
+    }
+
+    const gate = Math.random() < 0.5 ? 'AND' : 'OR';
+    return createCircuitBinary(
+        gate,
+        buildCircuitNode(availableInputs, depth + 1, maxDepth, false),
+        buildCircuitNode(availableInputs, depth + 1, maxDepth, false)
+    );
+};
+
+const labelCircuitTree = (node, state = { counter: 1 }, isRoot = true) => {
+    if (!node) return node;
+    if (node.kind === 'INPUT') {
+        return { ...node, outputLabel: node.name };
+    }
+
+    if (node.kind === 'NOT') {
+        const child = labelCircuitTree(node.child, state, false);
+        return {
+            ...node,
+            child,
+            outputLabel: isRoot ? 'Q' : `Q${state.counter++}`,
+        };
+    }
+
+    const left = labelCircuitTree(node.left, state, false);
+    const right = labelCircuitTree(node.right, state, false);
+    return {
+        ...node,
+        left,
+        right,
+        outputLabel: isRoot ? 'Q' : `Q${state.counter++}`,
+    };
+};
+
+const circuitGateSymbol = (kind) => (kind === 'AND' ? SYMBOLS.AND : SYMBOLS.OR);
+
+const circuitNodeRef = (node) => node?.outputLabel || '';
+
+const circuitNodeToExpression = (node) => {
+    if (!node) return '';
+    if (node.kind === 'INPUT') return node.name;
+    if (node.kind === 'NOT') return `${SYMBOLS.NOT} (${circuitNodeToExpression(node.child)})`;
+    return `(${circuitNodeToExpression(node.left)} ${circuitGateSymbol(node.kind)} ${circuitNodeToExpression(node.right)})`;
+};
+
+const collectCircuitSteps = (node, steps = []) => {
+    if (!node || node.kind === 'INPUT') return steps;
+
+    if (node.kind === 'NOT') {
+        collectCircuitSteps(node.child, steps);
+        steps.push({
+            label: node.outputLabel,
+            expression: `${SYMBOLS.NOT} (${circuitNodeRef(node.child)})`,
+        });
+        return steps;
+    }
+
+    collectCircuitSteps(node.left, steps);
+    collectCircuitSteps(node.right, steps);
+    steps.push({
+        label: node.outputLabel,
+        expression: `(${circuitNodeRef(node.left)} ${circuitGateSymbol(node.kind)} ${circuitNodeRef(node.right)})`,
+    });
+    return steps;
+};
+
+const extractFormulaVariables = (formula) => {
+    const matches = formula.match(/[A-Za-z]+/g) || [];
+    return [...new Set(matches.map(v => v.toUpperCase()).filter(v => v !== 'T' && v !== 'F'))].sort();
+};
+
+const buildAssignments = (vars) => {
+    const count = 1 << vars.length;
+    const rows = [];
+
+    for (let i = count - 1; i >= 0; i--) {
+        const values = {};
+        vars.forEach((v, idx) => {
+            const shift = vars.length - 1 - idx;
+            values[v] = (i >> shift) & 1 ? true : false;
+        });
+        rows.push(values);
+    }
+
+    return rows;
+};
+
+const buildTruthTableRows = (expr, vars) => buildAssignments(vars).map(values => ({
+    values,
+    result: solvePropositionSafe(expr, values) ? '1' : '0',
+}));
+
+const areExpressionsEquivalent = (expectedExpr, userExpr, vars) => {
+    const userVars = extractFormulaVariables(userExpr);
+    const unknownVars = userVars.filter(v => !vars.includes(v));
+
+    if (unknownVars.length > 0) {
+        return { valid: false, equivalent: false, reason: `Usa variables no permitidas: ${unknownVars.join(', ')}.` };
+    }
+
+    const parsedUser = parseFormulaAst(userExpr);
+    if (!parsedUser) {
+        return { valid: false, equivalent: false, reason: 'La fórmula tiene errores de sintaxis.' };
+    }
+
+    const parsedExpected = parseFormulaAst(expectedExpr);
+    if (!parsedExpected) {
+        return { valid: false, equivalent: false, reason: 'La solución generada no es válida.' };
+    }
+
+    const equivalent = buildAssignments(vars).every(values => (
+        solvePropositionSafe(userExpr, values) === solvePropositionSafe(expectedExpr, values)
+    ));
+
+    return { valid: true, equivalent, reason: equivalent ? '' : 'Tu expresión no representa la misma salida lógica.' };
+};
+
+const createCircuitChallenge = () => {
+    let tree = null;
+    let inputs = pickCircuitInputs();
+    let expression = '';
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+        inputs = pickCircuitInputs();
+        const candidate = labelCircuitTree(
+            buildCircuitNode(inputs, 0, Math.random() < 0.5 ? 1 : 2, true)
+        );
+        const candidateExpr = circuitNodeToExpression(candidate);
+
+        if (candidateExpr.length >= 5) {
+            tree = candidate;
+            expression = candidateExpr;
+            break;
+        }
+    }
+
+    if (!tree) {
+        tree = labelCircuitTree({
+            kind: 'AND',
+            left: createCircuitLeaf('A'),
+            right: createCircuitLeaf('B'),
+            outputLabel: null,
+        });
+        inputs = ['A', 'B'];
+        expression = circuitNodeToExpression(tree);
+    }
+
+    const steps = collectCircuitSteps(tree, []);
+    const truthTable = buildTruthTableRows(expression, inputs);
+
+    return {
+        inputs,
+        tree,
+        expression,
+        steps,
+        truthTable,
+    };
+};
+
 // --- COMPONENTS ---
 
 const Header = () => (
@@ -287,7 +625,7 @@ const Header = () => (
     </header>
 );
 
-const LogicKeyboard = ({ onInsert, extras = [] }) => {
+const LogicKeyboard = ({ onInsert, extras = [], vars = VARS }) => {
     const keys = [
         { char: SYMBOLS.NOT, label: 'NEG' },
         { char: SYMBOLS.AND, label: 'CONJ' },
@@ -296,7 +634,7 @@ const LogicKeyboard = ({ onInsert, extras = [] }) => {
         { char: SYMBOLS.IFF, label: 'BIC' },
         { char: '(', label: '(' },
         { char: ')', label: ')' },
-        ...VARS.map(v => ({ char: v, label: v })),
+        ...vars.map(v => ({ char: v, label: v })),
         ...extras
     ];
     return (
@@ -334,14 +672,18 @@ const SyntaxSection = () => {
 
         while(!valid && attempts < 10) {
             rawStr = generateFlatFormula(Math.floor(Math.random() * 2) + 3);
-            const tokens = rawStr.replace(/\s/g, '').split(/([¬∧∨⇒⇔])/).filter(t => t);
+            const tokens = tokenizeFormula(rawStr);
             
             try {
                 const ast = parseToAST(tokens);
+                if (containsErrorNode(ast)) throw new Error();
                 fullStr = ast.toFullString();
                 if (fullStr.length > rawStr.length + 2) valid = true;
             } catch (e) {}
             attempts++;
+        }
+        if (!valid) {
+            fullStr = rawStr;
         }
         setProblemRaw(rawStr);
         setExpected(fullStr);
@@ -352,10 +694,9 @@ const SyntaxSection = () => {
     };
 
     const handleCustomCheck = () => {
-        const tokens = input.replace(/\s/g, '').split(/([¬∧∨⇒⇔()])/).filter(t => t);
+        const ast = parseFormulaAst(input);
         try {
-            const ast = parseToAST(tokens);
-            if (ast.type === 'ERR') throw new Error();
+            if (!ast) throw new Error();
             
             const ideal = ast.toFullString().replace(/\s/g, '');
             const current = input.replace(/\s/g, '');
@@ -561,41 +902,18 @@ const EvaluationSection = () => {
     const handleInteraction = (idx, tokens) => {
         setMsg("");
         const token = tokens[idx];
-        const prev = tokens[idx - 1];
-        const next = tokens[idx + 1];
+        const allowed = getAllowedEvaluationRedexes(tokens);
 
-        const candidates = [];
-        tokens.forEach((t, i) => {
-            const isVal = (v) => v === '1' || v === '0';
-            if (t === SYMBOLS.NOT && isVal(tokens[i+1])) {
-                candidates.push({ idx: i, op: t, prec: PRECEDENCE[t] });
-            }
-            if ([SYMBOLS.AND, SYMBOLS.OR, SYMBOLS.IMP, SYMBOLS.IFF].includes(t) && isVal(tokens[i-1]) && isVal(tokens[i+1])) {
-                candidates.push({ idx: i, op: t, prec: PRECEDENCE[t] });
-            }
-        });
+        if (allowed.length === 0) return;
 
-        if (candidates.length === 0) return;
-
-        const maxPrec = Math.max(...candidates.map(c => c.prec));
-        const clickedPrec = PRECEDENCE[token];
-        
-        if (clickedPrec < maxPrec) {
+        const clicked = allowed.find(c => c.idx === idx);
+        if (!clicked) {
             setMsg("⚠️ ¡Orden incorrecto! Resuelve primero los operadores de mayor jerarquía.");
             return;
         }
 
-        if (token === SYMBOLS.NOT) {
-            const res = evaluateNot(next);
-            const prePart = tokens.slice(0, idx).join(' ');
-            const postPart = tokens.slice(idx + 2).join(' ');
-            addToHistory(`${prePart} ${res} ${postPart}`.trim());
-        } else {
-            const res = evaluateOp(prev, token, next);
-            const prePart = tokens.slice(0, idx - 1).join(' ');
-            const postPart = tokens.slice(idx + 2).join(' ');
-            addToHistory(`${prePart} ${res} ${postPart}`.trim());
-        }
+        const nextTokens = reduceEvaluationStep(tokens, idx);
+        addToHistory(nextTokens.join(' '));
     };
 
     const addToHistory = (newStr) => {
@@ -613,6 +931,7 @@ const EvaluationSection = () => {
 
     const currentStep = history[history.length - 1];
     const tokens = getTokens(currentStep.content);
+    const allowedRedexes = getAllowedEvaluationRedexes(tokens);
     const isSolved = tokens.length === 1 && (tokens[0] === '1' || tokens[0] === '0');
 
     return (
@@ -656,10 +975,7 @@ const EvaluationSection = () => {
                     <div className="mt-8 pt-6 border-t border-slate-100">
                         <div className="flex flex-wrap justify-center gap-2 font-mono text-3xl bg-slate-50 p-8 rounded-xl border-2 border-dashed border-slate-300 select-none">
                             {tokens.map((token, idx) => {
-                                const isVal = (v) => v === '0' || v === '1';
-                                const isUnary = token === SYMBOLS.NOT && isVal(tokens[idx+1]);
-                                const isBinary = [SYMBOLS.AND, SYMBOLS.OR, SYMBOLS.IMP, SYMBOLS.IFF].includes(token) && isVal(tokens[idx-1]) && isVal(tokens[idx+1]);
-                                const interactable = isUnary || isBinary;
+                                const interactable = allowedRedexes.some(candidate => candidate.idx === idx);
 
                                 return (
                                     <span 
@@ -721,12 +1037,19 @@ const SatisfactionSection = () => {
             setVariables([]); setRows([]); setSubExprs([]); return;
         }
 
+        const tokens = tokenizeFormula(expr);
+        const ast = parseToAST(tokens);
+        if (containsErrorNode(ast)) {
+            setVariables([]);
+            setRows([]);
+            setSubExprs([]);
+            return;
+        }
+
         setVariables(vars);
-        
-        const tokens = expr.replace(/\s/g, '').split(/([¬∧∨⇒⇔()])/).filter(t => t);
+
         let subs = [];
         try {
-            const ast = parseToAST(tokens);
             const allSubs = getSubExpressions(ast);
             const fullStr = ast.toFullString();
             subs = Array.from(allSubs).filter(s => {
@@ -818,13 +1141,13 @@ const SatisfactionSection = () => {
             const boolInputs = {};
             Object.keys(r.inputs).forEach(k => boolInputs[k.toUpperCase()] = r.inputs[k] === 1);
             
-            const expectedFinalBool = solveProposition(formula, boolInputs);
+            const expectedFinalBool = solvePropositionSafe(formula, boolInputs);
             const expectedFinal = expectedFinalBool ? '1' : '0';
             const statusFinal = r.finalVal === expectedFinal ? 'correct' : 'error';
 
             const statusSub = {};
             subExprs.forEach(sub => {
-                const subRes = solveProposition(sub, boolInputs);
+                const subRes = solvePropositionSafe(sub, boolInputs);
                 const expSub = subRes ? '1' : '0';
                 statusSub[sub] = r.subVals[sub] === expSub ? 'correct' : 'error';
             });
@@ -918,6 +1241,289 @@ const SatisfactionSection = () => {
     );
 };
 
+const CircuitSection = () => {
+    const [challenge, setChallenge] = useState(() => createCircuitChallenge());
+    const [answer, setAnswer] = useState('');
+    const [status, setStatus] = useState('idle');
+    const [feedback, setFeedback] = useState('');
+    const [showSolution, setShowSolution] = useState(false);
+    const [showTruthTable, setShowTruthTable] = useState(false);
+
+    const resetChallenge = () => {
+        setChallenge(createCircuitChallenge());
+        setAnswer('');
+        setStatus('idle');
+        setFeedback('');
+        setShowSolution(false);
+        setShowTruthTable(false);
+    };
+
+    useEffect(() => {
+        resetChallenge();
+    }, []);
+
+    const checkAnswer = () => {
+        const trimmed = answer.trim();
+        if (!trimmed) {
+            setStatus('error');
+            setFeedback('Escribe una expresión para la salida Q.');
+            return;
+        }
+
+        const result = areExpressionsEquivalent(challenge.expression, trimmed, challenge.inputs);
+        if (!result.valid) {
+            setStatus('error');
+            setFeedback(result.reason);
+            return;
+        }
+
+        if (result.equivalent) {
+            const exactMatch = trimmed.replace(/\s/g, '') === challenge.expression.replace(/\s/g, '');
+            setStatus('correct');
+            setFeedback(
+                exactMatch
+                    ? '¡Perfecto! Tu expresión coincide exactamente con la salida del circuito.'
+                    : '¡Muy bien! Tu expresión representa la misma función lógica que el circuito.'
+            );
+            setShowSolution(true);
+        } else {
+            setStatus('error');
+            setFeedback(result.reason);
+        }
+    };
+
+    const CircuitNodeView = ({ node }) => {
+        if (!node) return null;
+
+        if (node.kind === 'INPUT') {
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 rounded-full border-2 border-slate-300 bg-white shadow-sm flex flex-col items-center justify-center">
+                        <span className="text-xl font-black text-slate-800">{node.name}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-slate-400">Input</span>
+                    </div>
+                </div>
+            );
+        }
+
+        const gateLabel = node.kind === 'NOT' ? 'NOT' : node.kind;
+
+        return (
+            <div className="flex flex-col items-center gap-4">
+                <div className={`min-w-24 px-4 py-3 rounded-2xl border-2 shadow-md text-center ${
+                    node.kind === 'NOT'
+                        ? 'bg-rose-50 border-rose-300 text-rose-800'
+                        : 'bg-indigo-50 border-indigo-300 text-indigo-900'
+                }`}>
+                    <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-70">{gateLabel}</div>
+                    <div className="text-2xl font-black">{node.outputLabel}</div>
+                    <div className="text-[10px] uppercase tracking-wider mt-1 opacity-70">Salida</div>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-6 items-start">
+                    {node.kind === 'NOT' ? (
+                        <CircuitNodeView node={node.child} />
+                    ) : (
+                        <>
+                            <CircuitNodeView node={node.left} />
+                            <CircuitNodeView node={node.right} />
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-violet-50 p-4 rounded border-l-4 border-violet-500">
+                <h3 className="text-violet-900 font-bold">Circuitos Digitales: de la puerta a la expresión</h3>
+                <p className="text-sm text-violet-800">
+                    Observa el circuito, nombra las salidas intermedias y escribe la expresión completa de la salida <strong>Q</strong>.
+                </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                    <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">Reto de circuito</p>
+                            <h4 className="text-2xl font-black text-slate-900 mt-1">Descubre la expresión de Q</h4>
+                        </div>
+                        <button
+                            onClick={resetChallenge}
+                            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                        >
+                            <RefreshCw className="w-4 h-4" /> Nuevo circuito
+                        </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {challenge.inputs.map(input => (
+                            <div
+                                key={input}
+                                className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-mono font-bold"
+                            >
+                                Entrada {input}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[520px] bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-6">
+                            <CircuitNodeView node={challenge.tree} />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                        <h5 className="font-bold text-slate-800 mb-2">Cómo pensar el circuito</h5>
+                        <ol className="space-y-2 text-sm text-slate-600 list-decimal list-inside">
+                            <li>Identifica las salidas intermedias de cada puerta.</li>
+                            <li>Reemplaza cada bloque por su etiqueta, como Q1 o Q2.</li>
+                            <li>Cuando termines, solo deben quedar las entradas A, B o C en la expresión final.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                        <h4 className="text-xl font-black text-slate-900">Escribe la salida</h4>
+                        <p className="text-sm text-slate-500 mt-1">
+                            Usa los símbolos {SYMBOLS.NOT}, {SYMBOLS.AND} y {SYMBOLS.OR}. La salida final se llama Q.
+                        </p>
+
+                        <div className="mt-4 space-y-3">
+                            <input
+                                value={answer}
+                                onChange={e => {
+                                    setAnswer(e.target.value);
+                                    setStatus('idle');
+                                    setFeedback('');
+                                }}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        checkAnswer();
+                                    }
+                                }}
+                                className={`w-full text-lg font-mono p-3 border-2 rounded outline-none transition ${
+                                    status === 'correct'
+                                        ? 'border-green-500'
+                                        : status === 'error'
+                                            ? 'border-red-500'
+                                            : 'border-slate-300'
+                                }`}
+                                placeholder="Ej: (A ∧ B) ∨ ¬(C)"
+                            />
+
+                            <LogicKeyboard onInsert={char => setAnswer(prev => prev + char)} vars={challenge.inputs} />
+
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    onClick={checkAnswer}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-lg font-bold transition"
+                                >
+                                    Comprobar
+                                </button>
+                                <button
+                                    onClick={() => setShowSolution(prev => !prev)}
+                                    className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-5 py-3 rounded-lg font-bold transition"
+                                >
+                                    {showSolution ? 'Ocultar solución' : 'Ver solución'}
+                                </button>
+                                <button
+                                    onClick={() => setShowTruthTable(prev => !prev)}
+                                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-3 rounded-lg font-bold transition"
+                                >
+                                    {showTruthTable ? 'Ocultar tabla' : 'Ver tabla'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="min-h-[4rem] mt-4">
+                            {feedback && (
+                                <div className={`p-3 rounded-lg font-medium ${
+                                    status === 'correct'
+                                        ? 'bg-green-50 text-green-800 border border-green-200'
+                                        : 'bg-red-50 text-red-800 border border-red-200'
+                                }`}>
+                                    {feedback}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                        <h4 className="text-lg font-black text-slate-900">Desglose del circuito</h4>
+                        <div className="mt-4 space-y-3">
+                            {challenge.steps.length === 0 ? (
+                                <p className="text-sm text-slate-400">Este circuito es directo: la salida Q sale de una sola puerta.</p>
+                            ) : (
+                                challenge.steps.map((step, idx) => (
+                                    <div key={`${step.label}-${idx}`} className="flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center shrink-0">
+                                            {idx + 1}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-bold text-slate-900">{step.label}</div>
+                                            <div className="font-mono text-sm bg-slate-50 border border-slate-200 rounded px-3 py-2 mt-1">
+                                                {step.expression}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {showSolution && (
+                        <div className="bg-slate-900 text-white p-6 rounded-lg shadow-lg border border-slate-700">
+                            <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">Solución</p>
+                            <div className="mt-3 font-mono text-xl text-green-400 break-words">
+                                Q = {challenge.expression}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {showTruthTable && (
+                <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
+                    <h4 className="text-xl font-black text-slate-900">Tabla de verdad rápida</h4>
+                    <p className="text-sm text-slate-500 mt-1">
+                        Úsala para verificar si tu expresión produce exactamente la misma salida que el circuito.
+                    </p>
+                    <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-center border-collapse">
+                            <thead>
+                                <tr className="bg-slate-800 text-white">
+                                    {challenge.inputs.map(input => (
+                                        <th key={input} className="px-4 py-3">{input}</th>
+                                    ))}
+                                    <th className="px-4 py-3 bg-indigo-900">Q</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {challenge.truthTable.map((row, idx) => (
+                                    <tr key={idx} className="border-b border-slate-200">
+                                        {challenge.inputs.map(input => (
+                                            <td key={input} className="px-4 py-3 font-mono font-bold bg-slate-50">
+                                                {row.values[input] ? '1' : '0'}
+                                            </td>
+                                        ))}
+                                        <td className="px-4 py-3 font-mono font-black text-indigo-700">
+                                            {row.result}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function App() {
     const [activeTab, setActiveTab] = useState("syntax");
 
@@ -927,11 +1533,12 @@ export default function App() {
             
             <main className="max-w-6xl mx-auto px-4 mt-8">
                 {/* Navigation Tabs */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
                     {[
                         { id: 'syntax', icon: Code, label: 'Sintaxis' },
                         { id: 'evaluation', icon: CheckSquare, label: 'Evaluación' },
                         { id: 'satisfaction', icon: Table, label: 'Tablas de Verdad' },
+                        { id: 'circuits', icon: BrainCircuit, label: 'Circuitos' },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -952,8 +1559,24 @@ export default function App() {
                     {activeTab === 'syntax' && <SyntaxSection />}
                     {activeTab === 'evaluation' && <EvaluationSection />}
                     {activeTab === 'satisfaction' && <SatisfactionSection />}
+                    {activeTab === 'circuits' && <CircuitSection />}
                 </div>
             </main>
         </div>
     );
 }
+
+export {
+    SYMBOLS,
+    tokenizeFormula,
+    parseToAST,
+    parseFormulaAst,
+    solvePropositionSafe,
+    getAllowedEvaluationRedexes,
+    reduceEvaluationStep,
+    isBalanced,
+    extractFormulaVariables,
+    buildTruthTableRows,
+    areExpressionsEquivalent,
+    createCircuitChallenge
+};
