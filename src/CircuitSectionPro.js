@@ -5,22 +5,23 @@ const SYMBOLS = {
     NOT: '¬',
     AND: '∧',
     OR: '∨',
+    XOR: '⊕',
 };
 
 const MODE_OPTIONS = {
     simple: {
         label: 'Simple',
-        description: '2 entradas, 2-3 puertas',
+        description: '2 entradas, 2-4 puertas',
         inputs: ['A', 'B'],
-        gateRange: [2, 3],
-        weights: { AND: 0.6, OR: 0.25, NOT: 0.15 },
+        gateRange: [2, 4],
+        weights: { AND: 0.44, OR: 0.2, XOR: 0.2, NOT: 0.16 },
     },
     complex: {
         label: 'Compleja',
-        description: '3 entradas, 5-7 puertas',
+        description: '3 entradas, 5-8 puertas',
         inputs: ['A', 'B', 'C'],
-        gateRange: [5, 7],
-        weights: { AND: 0.42, OR: 0.35, NOT: 0.23 },
+        gateRange: [5, 8],
+        weights: { AND: 0.32, OR: 0.24, XOR: 0.26, NOT: 0.18 },
     },
     mixed: {
         label: 'Mixta',
@@ -35,6 +36,7 @@ const NODE = {
     NOT: 'NOT',
     AND: 'AND',
     OR: 'OR',
+    XOR: 'XOR',
 };
 
 const NODE_SPECS = {
@@ -42,6 +44,7 @@ const NODE_SPECS = {
     NOT: { width: 96, height: 58 },
     AND: { width: 104, height: 58 },
     OR: { width: 104, height: 58 },
+    XOR: { width: 112, height: 58 },
 };
 
 const NODE_COUNTER = { value: 0 };
@@ -67,6 +70,7 @@ const weightedGate = (weights, allowNot = true) => {
     const options = [
         [NODE.AND, weights.AND ?? 0.5],
         [NODE.OR, weights.OR ?? 0.3],
+        [NODE.XOR, weights.XOR ?? 0.2],
         [NODE.NOT, allowNot ? (weights.NOT ?? 0.2) : 0],
     ].filter(([, weight]) => weight > 0);
 
@@ -92,6 +96,13 @@ const createGateNode = (kind, props) => ({
     kind,
     ...props,
 });
+
+const gateSymbol = (kind) => {
+    if (kind === NODE.AND) return SYMBOLS.AND;
+    if (kind === NODE.OR) return SYMBOLS.OR;
+    if (kind === NODE.XOR) return SYMBOLS.XOR;
+    return SYMBOLS.OR;
+};
 
 const buildCircuitTree = (remainingGates, inputs, weights, depth = 0) => {
     if (remainingGates <= 0) {
@@ -140,7 +151,7 @@ const maxDepth = (node, depth = 0) => {
 const computeExpandedExpression = (node) => {
     if (node.kind === NODE.INPUT) return node.name;
     if (node.kind === NODE.NOT) return `${SYMBOLS.NOT}(${computeExpandedExpression(node.child)})`;
-    const op = node.kind === NODE.AND ? SYMBOLS.AND : SYMBOLS.OR;
+    const op = gateSymbol(node.kind);
     return `(${computeExpandedExpression(node.left)} ${op} ${computeExpandedExpression(node.right)})`;
 };
 
@@ -157,12 +168,18 @@ const computeNodeValues = (node, inputs, map = {}) => {
 
     const left = computeNodeValues(node.left, inputs, map);
     const right = computeNodeValues(node.right, inputs, map);
-    map[node.id] = node.kind === NODE.AND ? left && right : left || right;
+    map[node.id] = node.kind === NODE.AND
+        ? left && right
+        : node.kind === NODE.OR
+            ? left || right
+            : left !== right;
     return map[node.id];
 };
 
+const normalizeLogicExpression = (expr) => expr.replace(/\^/g, SYMBOLS.XOR);
+
 const collectTruthTable = (expr, vars) => {
-    const tokens = expr.replace(/\s+/g, '').split(/([¬∧∨()])/).filter(Boolean);
+    const tokens = normalizeLogicExpression(expr).replace(/\s+/g, '').split(/([¬∧∨⊕()])/).filter(Boolean);
 
     let pos = 0;
     const parseAtom = () => {
@@ -195,11 +212,20 @@ const collectTruthTable = (expr, vars) => {
         return node;
     };
 
-    const parseOr = () => {
+    const parseXor = () => {
         let node = parseAnd();
+        while (tokens[pos] === SYMBOLS.XOR) {
+            pos += 1;
+            node = { type: 'BIN', op: SYMBOLS.XOR, left: node, right: parseAnd() };
+        }
+        return node;
+    };
+
+    const parseOr = () => {
+        let node = parseXor();
         while (tokens[pos] === SYMBOLS.OR) {
             pos += 1;
-            node = { type: 'BIN', op: SYMBOLS.OR, left: node, right: parseAnd() };
+            node = { type: 'BIN', op: SYMBOLS.OR, left: node, right: parseXor() };
         }
         return node;
     };
@@ -218,7 +244,9 @@ const collectTruthTable = (expr, vars) => {
         if (node.type === 'NOT') return !evaluate(node.child, values);
         const left = evaluate(node.left, values);
         const right = evaluate(node.right, values);
-        return node.op === SYMBOLS.AND ? left && right : left || right;
+        if (node.op === SYMBOLS.AND) return left && right;
+        if (node.op === SYMBOLS.OR) return left || right;
+        return left !== right;
     };
 
     const count = 1 << vars.length;
@@ -243,7 +271,7 @@ const extractVariables = (expr) => {
 };
 
 const parseFormula = (expr) => {
-    const tokens = expr.replace(/\s+/g, '').split(/([¬∧∨()])/).filter(Boolean);
+    const tokens = normalizeLogicExpression(expr).replace(/\s+/g, '').split(/([¬∧∨⊕()])/).filter(Boolean);
     let pos = 0;
 
     const parseAtom = () => {
@@ -276,11 +304,20 @@ const parseFormula = (expr) => {
         return node;
     };
 
-    const parseOr = () => {
+    const parseXor = () => {
         let node = parseAnd();
+        while (tokens[pos] === SYMBOLS.XOR) {
+            pos += 1;
+            node = { type: 'BIN', op: SYMBOLS.XOR, left: node, right: parseAnd() };
+        }
+        return node;
+    };
+
+    const parseOr = () => {
+        let node = parseXor();
         while (tokens[pos] === SYMBOLS.OR) {
             pos += 1;
-            node = { type: 'BIN', op: SYMBOLS.OR, left: node, right: parseAnd() };
+            node = { type: 'BIN', op: SYMBOLS.OR, left: node, right: parseXor() };
         }
         return node;
     };
@@ -301,7 +338,9 @@ const evaluateFormula = (expr, values) => {
         if (node.type === 'NOT') return !evaluate(node.child);
         const left = evaluate(node.left);
         const right = evaluate(node.right);
-        return node.op === SYMBOLS.AND ? left && right : left || right;
+        if (node.op === SYMBOLS.AND) return left && right;
+        if (node.op === SYMBOLS.OR) return left || right;
+        return left !== right;
     };
     return evaluate(ast);
 };
@@ -364,7 +403,7 @@ const collectEquations = (node, labels, state = { index: 0 }, equations = [], is
     const left = collectEquations(node.left, labels, state, equations, false);
     const right = collectEquations(node.right, labels, state, equations, false);
     const alias = isRoot ? 'Q' : (labels[node.id]?.trim() || labelSuggestion(state.index++));
-    const symbol = node.kind === NODE.AND ? SYMBOLS.AND : SYMBOLS.OR;
+    const symbol = gateSymbol(node.kind);
     const equation = `${alias} = (${left.alias} ${symbol} ${right.alias})`;
     const expanded = `(${left.expanded} ${symbol} ${right.expanded})`;
     equations.push({ id: node.id, alias, equation, expanded, kind: node.kind });
@@ -535,15 +574,29 @@ const getNodePorts = (node, pos) => {
     };
 };
 
-const GateSymbol = ({ node, value }) => {
+const GateSymbol = ({ node, value, interactive = false, onToggle = null }) => {
     const stroke = value ? '#10b981' : '#64748b';
     const fill = value ? '#ecfdf5' : '#ffffff';
     const { width, height } = getNodeSpec(node.kind);
     const midY = height / 2;
+    const handleKeyDown = (event) => {
+        if (!interactive || !onToggle) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggle();
+        }
+    };
 
     if (node.kind === NODE.INPUT) {
         return (
-            <g>
+            <g
+                onClick={interactive && onToggle ? onToggle : undefined}
+                onKeyDown={handleKeyDown}
+                role={interactive ? 'button' : undefined}
+                aria-label={interactive ? `Toggle ${node.name}` : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                style={{ cursor: interactive ? 'pointer' : 'default' }}
+            >
                 <rect
                     x="4"
                     y="8"
@@ -554,12 +607,21 @@ const GateSymbol = ({ node, value }) => {
                     stroke={stroke}
                     strokeWidth="3"
                 />
+                <line x1="20" y1={midY} x2={width - 26} y2={midY} stroke={stroke} strokeWidth="4" strokeLinecap="round" />
+                <circle
+                    cx={value ? width - 30 : 28}
+                    cy={midY}
+                    r="9"
+                    fill={value ? '#10b981' : '#ffffff'}
+                    stroke={stroke}
+                    strokeWidth="3"
+                />
                 <circle cx={width - 8} cy={midY} r="5" fill={fill} stroke={stroke} strokeWidth="3" />
                 <text x="24" y={midY + 6} textAnchor="middle" fontSize="18" fontWeight="800" fill={stroke}>
                     {node.name}
                 </text>
-                <text x={width - 28} y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={stroke}>
-                    {value ? '1' : '0'}
+                <text x={width - 30} y={midY + 5} textAnchor="middle" fontSize="11" fontWeight="900" fill={stroke}>
+                    {value ? 'ON' : 'OFF'}
                 </text>
             </g>
         );
@@ -604,6 +666,33 @@ const GateSymbol = ({ node, value }) => {
         );
     }
 
+    if (node.kind === NODE.OR) {
+        return (
+            <g>
+                <path
+                    d={`M 12 8 C ${width * 0.36} 8 ${width * 0.54} 16 ${width * 0.64} ${midY} C ${width * 0.54} ${height - 16} ${width * 0.36} ${height - 8} 12 ${height - 8} C 18 ${height - 20} 18 ${midY + 18} 12 8 Z`}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                />
+                <path
+                    d={`M 12 8 C 5 ${midY - 12} 5 ${midY + 12} 12 ${height - 8}`}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                />
+                <circle cx="0" cy={midY - height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+                <circle cx="0" cy={midY + height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+                <circle cx={width} cy={midY} r="6" fill={fill} stroke={stroke} strokeWidth="3" />
+                <text x="34" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
+                    OR
+                </text>
+            </g>
+        );
+    }
+
     return (
         <g>
             <path
@@ -620,11 +709,18 @@ const GateSymbol = ({ node, value }) => {
                 strokeWidth="3"
                 strokeLinecap="round"
             />
+            <path
+                d={`M 4 ${midY - 12} C 18 ${midY - 18} 28 ${midY - 18} 40 ${midY - 4}`}
+                fill="none"
+                stroke={stroke}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+            />
             <circle cx="0" cy={midY - height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
             <circle cx="0" cy={midY + height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
             <circle cx={width} cy={midY} r="6" fill={fill} stroke={stroke} strokeWidth="3" />
-            <text x="34" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
-                OR
+            <text x="44" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
+                XOR
             </text>
         </g>
     );
@@ -751,6 +847,10 @@ const CircuitSectionPro = () => {
         setInputValues(prev => ({ ...prev, [inputName]: !prev[inputName] }));
     };
 
+    const appendAnswerToken = (token) => {
+        setAnswer(prev => `${prev}${token}`);
+    };
+
     const rootValue = liveValues[challenge.tree.id] ? '1' : '0';
     const rootPosition = currentLayout.positions.get(challenge.tree.id);
     const rootPorts = rootPosition ? getNodePorts(challenge.tree, rootPosition) : null;
@@ -833,41 +933,12 @@ const CircuitSectionPro = () => {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold">
-                                    Interruptores de entrada
+                                    Interactua con el circuito
                                 </p>
                                 <p className="text-sm text-slate-500">
-                                    Cambia cada entrada y mira como se propaga la senal por todo el circuito.
+                                    Haz clic en A, B o C dentro del esquema para cambiar su estado. Tambien puedes usar ⊕ o ^ como XOR al escribir la expresion.
                                 </p>
                             </div>
-                            <button
-                                onClick={randomizeInputs}
-                                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
-                            >
-                                <Play className="w-4 h-4" /> Aleatorizar entradas
-                            </button>
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap gap-3">
-                            {challenge.inputs.map(inputName => (
-                                <button
-                                    key={inputName}
-                                    type="button"
-                                    onClick={() => toggleInput(inputName)}
-                                    className={`min-w-[132px] rounded-2xl border-2 px-4 py-3 text-left transition shadow-sm ${
-                                        inputValues[inputName]
-                                            ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
-                                            : 'bg-slate-50 border-slate-300 text-slate-700'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-sm font-black uppercase tracking-[0.2em]">{inputName}</span>
-                                        <span className="font-mono text-lg font-black">{inputValues[inputName] ? '1' : '0'}</span>
-                                    </div>
-                                    <div className="mt-2 text-[10px] uppercase tracking-[0.25em] opacity-80">
-                                        {inputValues[inputName] ? 'ON' : 'OFF'}
-                                    </div>
-                                </button>
-                            ))}
                         </div>
                     </div>
 
@@ -930,10 +1001,16 @@ const CircuitSectionPro = () => {
                                         if (!node) return null;
                                         const value = liveValues[id];
                                         const frame = getNodeFrame(node, pos);
+                                        const isInput = node.kind === NODE.INPUT;
 
                                         return (
                                             <g key={id} transform={`translate(${frame.x}, ${frame.y})`}>
-                                                <GateSymbol node={node} value={value} />
+                                                <GateSymbol
+                                                    node={node}
+                                                    value={value}
+                                                    interactive={isInput}
+                                                    onToggle={isInput ? () => toggleInput(node.name) : null}
+                                                />
                                             </g>
                                         );
                                     })}
@@ -989,6 +1066,27 @@ const CircuitSectionPro = () => {
                         </p>
 
                         <div className="mt-4 space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { char: SYMBOLS.NOT, label: 'NOT' },
+                                    { char: SYMBOLS.AND, label: 'AND' },
+                                    { char: SYMBOLS.OR, label: 'OR' },
+                                    { char: SYMBOLS.XOR, label: 'XOR' },
+                                    { char: '(', label: '(' },
+                                    { char: ')', label: ')' },
+                                    ...challenge.inputs.map(input => ({ char: input, label: input })),
+                                ].map(key => (
+                                    <button
+                                        key={`${key.char}-${key.label}`}
+                                        type="button"
+                                        onClick={() => appendAnswerToken(key.char)}
+                                        className="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-2 rounded-lg shadow-sm text-sm font-bold transition active:scale-95"
+                                    >
+                                        {key.label}
+                                    </button>
+                                ))}
+                            </div>
+
                             <input
                                 value={answer}
                                 onChange={e => {
@@ -1008,7 +1106,7 @@ const CircuitSectionPro = () => {
                                             ? 'border-rose-500'
                                             : 'border-slate-300'
                                 }`}
-                                placeholder="Ej: (A ∧ B) ∨ ¬(C)"
+                                placeholder="Ej: (A ∧ B) ⊕ ¬(C)"
                             />
 
                             <div className="flex flex-wrap gap-2">
