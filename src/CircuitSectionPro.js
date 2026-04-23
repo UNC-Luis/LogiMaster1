@@ -37,6 +37,13 @@ const NODE = {
     OR: 'OR',
 };
 
+const NODE_SPECS = {
+    INPUT: { width: 84, height: 42 },
+    NOT: { width: 96, height: 58 },
+    AND: { width: 104, height: 58 },
+    OR: { width: 104, height: 58 },
+};
+
 const NODE_COUNTER = { value: 0 };
 
 const resetNodeIds = () => {
@@ -392,17 +399,15 @@ const layoutCircuit = (root) => {
     });
 
     const maxTreeDepth = maxDepth(root);
-    const leftMargin = 90;
-    const layerGap = 170;
+    const leftMargin = 110;
+    const layerGap = 190;
     const positions = new Map();
-    const nodeWidths = new Map();
 
     const place = (node) => {
         if (node.kind === NODE.INPUT) {
             const y = leafY.get(node.id);
             const x = leftMargin;
             positions.set(node.id, { x, y, kind: node.kind });
-            nodeWidths.set(node.id, 48);
             return y;
         }
 
@@ -417,13 +422,12 @@ const layoutCircuit = (root) => {
         const x = leftMargin + (maxTreeDepth - depth) * layerGap;
         const y = childYs.reduce((a, b) => a + b, 0) / childYs.length;
         positions.set(node.id, { x, y, kind: node.kind });
-        nodeWidths.set(node.id, 96);
         return y;
     };
 
     place(root);
 
-    const width = leftMargin + maxTreeDepth * layerGap + 260;
+    const width = leftMargin + maxTreeDepth * layerGap + 340;
     const height = Math.max(420, topMargin + Math.max(1, leaves.length - 1) * leafGap + 120);
 
     const edges = [];
@@ -494,16 +498,68 @@ const generateCircuitChallenge = (mode = 'simple') => {
     };
 };
 
+const getNodeSpec = (kind) => NODE_SPECS[kind] || NODE_SPECS.OR;
+
+const getNodeFrame = (node, pos) => {
+    const { width, height } = getNodeSpec(node.kind);
+    return {
+        x: pos.x - width / 2,
+        y: pos.y - height / 2,
+        width,
+        height,
+    };
+};
+
+const getNodePorts = (node, pos) => {
+    const frame = getNodeFrame(node, pos);
+    const midY = frame.y + frame.height / 2;
+
+    if (node.kind === NODE.INPUT) {
+        return {
+            output: { x: frame.x + frame.width - 8, y: midY },
+        };
+    }
+
+    if (node.kind === NODE.NOT) {
+        return {
+            input: { x: frame.x, y: midY },
+            output: { x: frame.x + frame.width - 10, y: midY },
+        };
+    }
+
+    const branchOffset = frame.height * 0.22;
+    return {
+        inputTop: { x: frame.x, y: midY - branchOffset },
+        inputBottom: { x: frame.x, y: midY + branchOffset },
+        output: { x: frame.x + frame.width, y: midY },
+    };
+};
+
 const GateSymbol = ({ node, value }) => {
     const stroke = value ? '#10b981' : '#64748b';
     const fill = value ? '#ecfdf5' : '#ffffff';
+    const { width, height } = getNodeSpec(node.kind);
+    const midY = height / 2;
 
     if (node.kind === NODE.INPUT) {
         return (
             <g>
-                <circle cx="24" cy="24" r="22" fill={fill} stroke={stroke} strokeWidth="3" />
-                <text x="24" y="29" textAnchor="middle" fontSize="18" fontWeight="800" fill={stroke}>
+                <rect
+                    x="4"
+                    y="8"
+                    width={width - 16}
+                    height={height - 16}
+                    rx="16"
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth="3"
+                />
+                <circle cx={width - 8} cy={midY} r="5" fill={fill} stroke={stroke} strokeWidth="3" />
+                <text x="24" y={midY + 6} textAnchor="middle" fontSize="18" fontWeight="800" fill={stroke}>
                     {node.name}
+                </text>
+                <text x={width - 28} y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill={stroke}>
+                    {value ? '1' : '0'}
                 </text>
             </g>
         );
@@ -513,14 +569,15 @@ const GateSymbol = ({ node, value }) => {
         return (
             <g>
                 <polygon
-                    points="10,8 62,30 10,52"
+                    points={`14,8 ${width - 20},${midY} 14,${height - 8}`}
                     fill={fill}
                     stroke={stroke}
                     strokeWidth="3"
                     strokeLinejoin="round"
                 />
-                <circle cx="72" cy="30" r="6" fill={fill} stroke={stroke} strokeWidth="3" />
-                <text x="28" y="34" textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
+                <circle cx={width - 10} cy={midY} r="6" fill={fill} stroke={stroke} strokeWidth="3" />
+                <circle cx="0" cy={midY} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+                <text x="30" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
                     NOT
                 </text>
             </g>
@@ -531,13 +588,16 @@ const GateSymbol = ({ node, value }) => {
         return (
             <g>
                 <path
-                    d="M 12 8 H 44 C 63 8 78 20 78 30 C 78 40 63 52 44 52 H 12 Z"
+                    d={`M 14 8 H ${width - 38} C ${width - 14} 8 ${width - 6} ${midY - 10} ${width - 6} ${midY} C ${width - 6} ${midY + 10} ${width - 14} ${height - 8} ${width - 38} ${height - 8} H 14 Z`}
                     fill={fill}
                     stroke={stroke}
                     strokeWidth="3"
                     strokeLinejoin="round"
                 />
-                <text x="34" y="34" textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
+                <circle cx="0" cy={midY - height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+                <circle cx="0" cy={midY + height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+                <circle cx={width} cy={midY} r="6" fill={fill} stroke={stroke} strokeWidth="3" />
+                <text x="36" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
                     AND
                 </text>
             </g>
@@ -547,20 +607,23 @@ const GateSymbol = ({ node, value }) => {
     return (
         <g>
             <path
-                d="M 12 8 C 32 8 46 16 58 30 C 46 44 32 52 12 52 C 18 40 18 20 12 8 Z"
+                d={`M 12 8 C ${width * 0.36} 8 ${width * 0.54} 16 ${width * 0.64} ${midY} C ${width * 0.54} ${height - 16} ${width * 0.36} ${height - 8} 12 ${height - 8} C 18 ${height - 20} 18 ${midY + 18} 12 8 Z`}
                 fill={fill}
                 stroke={stroke}
                 strokeWidth="3"
                 strokeLinejoin="round"
             />
             <path
-                d="M 12 8 C 6 20 6 40 12 52"
+                d={`M 12 8 C 5 ${midY - 12} 5 ${midY + 12} 12 ${height - 8}`}
                 fill="none"
                 stroke={stroke}
                 strokeWidth="3"
                 strokeLinecap="round"
             />
-            <text x="34" y="34" textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
+            <circle cx="0" cy={midY - height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+            <circle cx="0" cy={midY + height * 0.18} r="4" fill={fill} stroke={stroke} strokeWidth="3" />
+            <circle cx={width} cy={midY} r="6" fill={fill} stroke={stroke} strokeWidth="3" />
+            <text x="34" y={midY + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill={stroke}>
                 OR
             </text>
         </g>
@@ -604,18 +667,37 @@ const CircuitSectionPro = () => {
         loadChallenge('simple');
     }, []);
 
-    const currentLayout = useMemo(() => layoutCircuit(challenge.tree), [challenge]);
+    const currentLayout = useMemo(() => layoutCircuit(challenge.tree), [challenge.tree]);
     const liveValues = useMemo(() => {
         const values = {};
         computeNodeValues(challenge.tree, inputValues, values);
         return values;
-    }, [challenge, inputValues]);
+    }, [challenge.tree, inputValues]);
+
+    const nodesById = useMemo(() => {
+        const map = new Map();
+
+        const visit = (node) => {
+            if (!node || map.has(node.id)) return;
+            map.set(node.id, node);
+
+            if (node.kind === NODE.NOT) {
+                visit(node.child);
+            } else if (node.kind !== NODE.INPUT) {
+                visit(node.left);
+                visit(node.right);
+            }
+        };
+
+        visit(challenge.tree);
+        return map;
+    }, [challenge.tree]);
 
     const equationLines = useMemo(() => {
         const lines = [];
         collectEquations(challenge.tree, labels, { index: 0 }, lines, true);
         return lines;
-    }, [challenge, labels]);
+    }, [challenge.tree, labels]);
 
     const topLevelEquation = equationLines.find(line => line.alias === 'Q')?.expanded || challenge.expression;
 
@@ -670,6 +752,8 @@ const CircuitSectionPro = () => {
     };
 
     const rootValue = liveValues[challenge.tree.id] ? '1' : '0';
+    const rootPosition = currentLayout.positions.get(challenge.tree.id);
+    const rootPorts = rootPosition ? getNodePorts(challenge.tree, rootPosition) : null;
 
     return (
         <div className="space-y-6">
@@ -745,6 +829,48 @@ const CircuitSectionPro = () => {
                         </span>
                     </div>
 
+                    <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold">
+                                    Interruptores de entrada
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                    Cambia cada entrada y mira como se propaga la senal por todo el circuito.
+                                </p>
+                            </div>
+                            <button
+                                onClick={randomizeInputs}
+                                className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                            >
+                                <Play className="w-4 h-4" /> Aleatorizar entradas
+                            </button>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-3">
+                            {challenge.inputs.map(inputName => (
+                                <button
+                                    key={inputName}
+                                    type="button"
+                                    onClick={() => toggleInput(inputName)}
+                                    className={`min-w-[132px] rounded-2xl border-2 px-4 py-3 text-left transition shadow-sm ${
+                                        inputValues[inputName]
+                                            ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
+                                            : 'bg-slate-50 border-slate-300 text-slate-700'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm font-black uppercase tracking-[0.2em]">{inputName}</span>
+                                        <span className="font-mono text-lg font-black">{inputValues[inputName] ? '1' : '0'}</span>
+                                    </div>
+                                    <div className="mt-2 text-[10px] uppercase tracking-[0.25em] opacity-80">
+                                        {inputValues[inputName] ? 'ON' : 'OFF'}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="relative overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50">
                         <div className="relative" style={{ width: currentLayout.width, height: currentLayout.height }}>
                             <svg
@@ -761,19 +887,21 @@ const CircuitSectionPro = () => {
                                 <rect width="100%" height="100%" fill="url(#circuit-grid)" />
 
                                 {currentLayout.edges.map((edge, index) => {
-                                    const from = edge.from;
-                                    const to = edge.to;
-                                    const startX = from.x + (edge.childId && liveValues[edge.childId] ? 24 : 24);
-                                    const startY = from.y;
-                                    const endX = to.x - 48;
-                                    const endY = edge.port === 'top' ? to.y - 14 : edge.port === 'bottom' ? to.y + 14 : to.y;
-                                    const elbowX = (startX + endX) / 2;
+                                    const startPorts = getNodePorts({ kind: edge.from.kind }, edge.from);
+                                    const targetPorts = getNodePorts({ kind: edge.to.kind }, edge.to);
+                                    const start = startPorts.output;
+                                    const target = edge.port === 'top'
+                                        ? targetPorts.inputTop
+                                        : edge.port === 'bottom'
+                                            ? targetPorts.inputBottom
+                                            : targetPorts.input;
+                                    const elbowX = start.x + Math.max(28, (target.x - start.x) * 0.55);
                                     const childValue = liveValues[edge.childId];
 
                                     return (
                                         <path
                                             key={`${edge.childId}-${index}`}
-                                            d={`M ${startX} ${startY} H ${elbowX} V ${endY} H ${endX}`}
+                                            d={`M ${start.x} ${start.y} H ${elbowX} V ${target.y} H ${target.x}`}
                                             fill="none"
                                             stroke={wireStroke(childValue)}
                                             strokeWidth="3"
@@ -783,92 +911,44 @@ const CircuitSectionPro = () => {
                                     );
                                 })}
 
-                                {challenge.tree && (
+                                {rootPosition && rootPorts && (
                                     <g>
-                                        {challenge.tree && (
-                                            <circle
-                                                cx={currentLayout.positions.get(challenge.tree.id).x + 50}
-                                                cy={currentLayout.positions.get(challenge.tree.id).y}
-                                                r="10"
-                                                fill={rootValue === '1' ? '#dcfce7' : '#fff1f2'}
-                                                stroke={rootValue === '1' ? '#10b981' : '#fb7185'}
-                                                strokeWidth="3"
-                                            />
-                                        )}
+                                        <circle
+                                            cx={rootPorts.output.x + 18}
+                                            cy={rootPorts.output.y}
+                                            r="10"
+                                            fill={rootValue === '1' ? '#dcfce7' : '#fff1f2'}
+                                            stroke={rootValue === '1' ? '#10b981' : '#fb7185'}
+                                            strokeWidth="3"
+                                        />
                                     </g>
                                 )}
 
-                                {challenge.tree && (
-                                    <g>
-                                        {Array.from(currentLayout.positions.entries()).map(([id, pos]) => {
-                                            const node = [challenge.tree, ...challenge.internalNodes].find(n => n.id === id) || null;
-                                            if (!node) return null;
-                                            const value = liveValues[id];
-                                            const isInput = node.kind === NODE.INPUT;
-                                            const x = isInput ? pos.x : pos.x;
-                                            const y = pos.y;
-                                            const gateStroke = value ? '#10b981' : '#64748b';
+                                <g>
+                                    {Array.from(currentLayout.positions.entries()).map(([id, pos]) => {
+                                        const node = nodesById.get(id);
+                                        if (!node) return null;
+                                        const value = liveValues[id];
+                                        const frame = getNodeFrame(node, pos);
 
-                                            return (
-                                                <g key={id}>
-                                                    <g transform={`translate(${x - (isInput ? 24 : 48)}, ${y - (isInput ? 24 : 30)})`}>
-                                                        <GateSymbol node={node} value={value} />
-                                                    </g>
-                                                    {!isInput && (
-                                                        <circle
-                                                            cx={x + 44}
-                                                            cy={y}
-                                                            r="8"
-                                                            fill={value ? '#ecfdf5' : '#ffffff'}
-                                                            stroke={gateStroke}
-                                                            strokeWidth="3"
-                                                        />
-                                                    )}
-                                                </g>
-                                            );
-                                        })}
-                                    </g>
-                                )}
+                                        return (
+                                            <g key={id} transform={`translate(${frame.x}, ${frame.y})`}>
+                                                <GateSymbol node={node} value={value} />
+                                            </g>
+                                        );
+                                    })}
+                                </g>
                             </svg>
-
-                            {challenge.inputs.map(inputName => {
-                                const inputNode = findNodeByName(challenge.tree, inputName);
-                                const nodePos = inputNode ? currentLayout.positions.get(inputNode.id) : null;
-                                if (!nodePos) return null;
-
-                                return (
-                                    <div
-                                        key={inputName}
-                                        className="absolute"
-                                        style={{ left: nodePos.x - 44, top: nodePos.y - 58, width: 120 }}
-                                    >
-                                        <div className="text-xs font-bold text-slate-500 mb-1">{inputName}</div>
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleInput(inputName)}
-                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-full border-2 transition ${
-                                                inputValues[inputName]
-                                                    ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
-                                                    : 'bg-slate-100 border-slate-300 text-slate-600'
-                                            }`}
-                                        >
-                                            <span className="font-black text-sm">{inputValues[inputName] ? '1' : '0'}</span>
-                                            <span className="text-[10px] uppercase tracking-[0.2em]">
-                                                {inputValues[inputName] ? 'ON' : 'OFF'}
-                                            </span>
-                                        </button>
-                                    </div>
-                                );
-                            })}
 
                             {internalLabelNodes.map((node, index) => {
                                 const pos = currentLayout.positions.get(node.id);
                                 if (!pos) return null;
+                                const frame = getNodeFrame(node, pos);
                                 return (
                                     <div
                                         key={node.id}
                                         className="absolute"
-                                        style={{ left: pos.x - 56, top: pos.y - 76, width: 112 }}
+                                        style={{ left: frame.x - 16, top: frame.y - 82, width: frame.width + 32 }}
                                     >
                                         <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-1 text-center">
                                             Salida {index + 1}
@@ -883,18 +963,20 @@ const CircuitSectionPro = () => {
                                 );
                             })}
 
-                            <div
-                                className="absolute"
-                                style={{ left: currentLayout.positions.get(challenge.tree.id).x + 72, top: currentLayout.positions.get(challenge.tree.id).y - 18 }}
-                            >
-                                <div className={`px-4 py-2 rounded-full font-black shadow ${
-                                    rootValue === '1'
-                                        ? 'bg-emerald-500 text-white'
-                                        : 'bg-rose-500 text-white'
-                                }`}>
-                                    Q = {rootValue}
+                            {rootPosition && rootPorts && (
+                                <div
+                                    className="absolute"
+                                    style={{ left: rootPorts.output.x + 30, top: rootPorts.output.y - 18 }}
+                                >
+                                    <div className={`px-4 py-2 rounded-full font-black shadow ${
+                                        rootValue === '1'
+                                            ? 'bg-emerald-500 text-white'
+                                            : 'bg-rose-500 text-white'
+                                    }`}>
+                                        Q = {rootValue}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1025,13 +1107,6 @@ const CircuitSectionPro = () => {
             </div>
         </div>
     );
-};
-
-const findNodeByName = (node, name) => {
-    if (!node) return null;
-    if (node.kind === NODE.INPUT && node.name === name) return node;
-    if (node.kind === NODE.NOT) return findNodeByName(node.child, name);
-    return findNodeByName(node.left, name) || findNodeByName(node.right, name);
 };
 
 export default CircuitSectionPro;
