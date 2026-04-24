@@ -1564,7 +1564,7 @@ export default function App() {
                         { id: 'evaluation', icon: CheckSquare, label: 'Evaluación' },
                         { id: 'satisfaction', icon: Table, label: 'Tablas de Verdad' },
                         { id: 'circuits', icon: BrainCircuit, label: 'Circuitos' },
-                        { id: 'studyguide2', icon: BookOpen, label: 'Guía 2' },
+                        { id: 'studyguide2', icon: BookOpen, label: 'Guía 2', featured: true },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -1572,10 +1572,22 @@ export default function App() {
                             className={`group flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${
                                 activeTab === tab.id 
                                 ? 'bg-slate-950 text-white shadow-lg shadow-slate-900/15 ring-1 ring-slate-950/10' 
+                                : tab.featured
+                                ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-200 hover:-translate-y-0.5 hover:bg-violet-100 hover:text-violet-900'
                                 : 'bg-slate-50 text-slate-600 hover:-translate-y-0.5 hover:bg-white hover:text-slate-900'
                             }`}
                         >
-                            <tab.icon className="h-5 w-5 transition group-hover:scale-105" /> {tab.label}
+                            <tab.icon className="h-5 w-5 transition group-hover:scale-105" />
+                            <span>{tab.label}</span>
+                            {tab.featured && (
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] ${
+                                    activeTab === tab.id
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-violet-600 text-white'
+                                }`}>
+                                    Nuevo
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
