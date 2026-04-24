@@ -603,20 +603,27 @@ const makeEquivalenceChallenge = () => {
 
 const makeLawChallenge = () => {
     const pool = Math.random() < 0.8 ? LAW_TRUE_FALSE_BEGINNER_LIBRARY : LAW_TRUE_FALSE_LIBRARY;
-    const card = instantiateLawCard(pick(pool));
-    const statement = `${card.left} = ${card.right}`;
+    const card = pick(pool);
+    const bindings = buildBindings();
+    const left = replacePlaceholders(card.left, bindings);
+    const right = replacePlaceholders(card.right, bindings);
+    const correctRight = card.correctRight
+        ? replacePlaceholders(card.correctRight, bindings)
+        : right;
+    const statement = `${left} = ${right}`;
     const correctStatement = card.answer === 'Verdadero'
         ? statement
-        : `${card.left} = ${card.correctRight || card.right}`;
+        : `${left} = ${correctRight}`;
 
     return {
-        id: card.id,
+        id: card.id || statement,
         statement,
         correctStatement,
         law: card.law,
         answer: card.answer,
         options: ['Verdadero', 'Falso'],
         explanation: card.explanation,
+        bindings,
     };
 };
 
