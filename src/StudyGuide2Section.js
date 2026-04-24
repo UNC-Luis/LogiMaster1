@@ -27,7 +27,7 @@ const TOPICS = [
     {
         id: 'laws',
         label: 'Leyes',
-        description: 'Memoriza los nombres de las leyes hasta que salgan automáticos.',
+        description: 'Decide si cada igualdad es verdadera o falsa y memoriza las leyes.',
         accent: 'from-violet-600 via-fuchsia-500 to-pink-500',
     },
     {
@@ -228,6 +228,279 @@ const LAW_LIBRARY = [
     },
 ];
 
+const LAW_TRUE_FALSE_LIBRARY = [
+    {
+        left: `T ${LOGIC.AND} T`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Identidad',
+        explanation: 'T ∧ T sigue siendo verdadero.',
+    },
+    {
+        left: `T ${LOGIC.OR} F`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Dominación',
+        explanation: 'Con T en una disyunción, el resultado queda verdadero.',
+    },
+    {
+        left: `F ${LOGIC.AND} F`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Idempotencia',
+        explanation: 'F ∧ F sigue siendo falso.',
+    },
+    {
+        left: `F ${LOGIC.OR} F`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Idempotencia',
+        explanation: 'F ∨ F sigue siendo falso.',
+    },
+    {
+        left: `P ${LOGIC.AND} T`,
+        right: 'P',
+        answer: 'Verdadero',
+        law: 'Identidad',
+        explanation: 'P ∧ T deja a P igual.',
+    },
+    {
+        left: `P ${LOGIC.OR} F`,
+        right: 'P',
+        answer: 'Verdadero',
+        law: 'Identidad',
+        explanation: 'P ∨ F deja a P igual.',
+    },
+    {
+        left: `P ${LOGIC.AND} F`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Dominación',
+        explanation: 'P ∧ F siempre da falso.',
+    },
+    {
+        left: `P ${LOGIC.OR} T`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Dominación',
+        explanation: 'P ∨ T siempre da verdadero.',
+    },
+    {
+        left: `P ${LOGIC.AND} ${LOGIC.NOT}P`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Contradicción',
+        explanation: 'P y no P no pueden ser verdaderos al mismo tiempo.',
+    },
+    {
+        left: `P ${LOGIC.OR} ${LOGIC.NOT}P`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Tercero excluido',
+        explanation: 'P o no P siempre es verdadero.',
+    },
+    {
+        left: `P ${LOGIC.AND} F`,
+        right: 'P',
+        correctRight: 'F',
+        answer: 'Falso',
+        law: 'Dominación',
+        explanation: 'P ∧ F no puede quedarse como P; el resultado correcto es F.',
+    },
+    {
+        left: `P ${LOGIC.OR} T`,
+        right: 'P',
+        correctRight: 'T',
+        answer: 'Falso',
+        law: 'Dominación',
+        explanation: 'P ∨ T no puede quedarse como P; el resultado correcto es T.',
+    },
+    {
+        left: `P ${LOGIC.AND} T`,
+        right: 'T',
+        correctRight: 'P',
+        answer: 'Falso',
+        law: 'Identidad',
+        explanation: 'P ∧ T no se convierte en T; se queda en P.',
+    },
+    {
+        left: `P ${LOGIC.OR} F`,
+        right: 'F',
+        correctRight: 'P',
+        answer: 'Falso',
+        law: 'Identidad',
+        explanation: 'P ∨ F no se convierte en F; se queda en P.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} T`,
+        right: '__A__',
+        answer: 'Verdadero',
+        law: 'Identidad',
+        explanation: 'T es el elemento neutro de la conjunción.',
+    },
+    {
+        left: `__A__ ${LOGIC.OR} F`,
+        right: '__A__',
+        answer: 'Verdadero',
+        law: 'Identidad',
+        explanation: 'F es el elemento neutro de la disyunción.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} F`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Dominación',
+        explanation: 'F domina la conjunción.',
+    },
+    {
+        left: `__A__ ${LOGIC.OR} T`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Dominación',
+        explanation: 'T domina la disyunción.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} F`,
+        right: '__A__',
+        correctRight: 'F',
+        answer: 'Falso',
+        law: 'Dominación',
+        explanation: 'Con F al lado, la conjunción vale F, no la proposición sola.',
+    },
+    {
+        left: `__A__ ${LOGIC.OR} T`,
+        right: '__A__',
+        correctRight: 'T',
+        answer: 'Falso',
+        law: 'Dominación',
+        explanation: 'Con T al lado, la disyunción vale T, no la proposición sola.',
+    },
+    {
+        left: `${LOGIC.NOT}${LOGIC.NOT}__A__`,
+        right: '__A__',
+        answer: 'Verdadero',
+        law: 'Doble negación',
+        explanation: 'Dos negaciones se cancelan.',
+    },
+    {
+        left: `${LOGIC.NOT}T`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Constantes',
+        explanation: 'La negación de verdadero es falso.',
+    },
+    {
+        left: `${LOGIC.NOT}F`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Constantes',
+        explanation: 'La negación de falso es verdadero.',
+    },
+    {
+        left: `__A__ ${LOGIC.OR} ${LOGIC.NOT}__A__`,
+        right: 'T',
+        answer: 'Verdadero',
+        law: 'Tercero excluido',
+        explanation: 'Una proposición o su negación siempre es verdadera.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} ${LOGIC.NOT}__A__`,
+        right: 'F',
+        answer: 'Verdadero',
+        law: 'Contradicción',
+        explanation: 'Una proposición y su negación no pueden ser verdaderas a la vez.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} ${LOGIC.NOT}__A__`,
+        right: 'T',
+        correctRight: 'F',
+        answer: 'Falso',
+        law: 'Contradicción',
+        explanation: 'La conjunción con una negación opuesta da falso.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} __B__`,
+        right: `__B__ ${LOGIC.AND} __A__`,
+        answer: 'Verdadero',
+        law: 'Conmutativa',
+        explanation: 'El orden de AND no importa.',
+    },
+    {
+        left: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.AND} __C__`,
+        right: `__A__ ${LOGIC.AND} (__B__ ${LOGIC.AND} __C__)`,
+        answer: 'Verdadero',
+        law: 'Asociativa',
+        explanation: 'El agrupamiento no importa cuando el operador es el mismo.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} (__B__ ${LOGIC.OR} __C__)`,
+        right: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.OR} (__A__ ${LOGIC.AND} __C__)`,
+        answer: 'Verdadero',
+        law: 'Distributiva',
+        explanation: 'AND distribuye sobre OR.',
+    },
+    {
+        left: `__A__ ${LOGIC.OR} (__A__ ${LOGIC.AND} __B__)`,
+        right: '__A__',
+        answer: 'Verdadero',
+        law: 'Absorción',
+        explanation: 'A absorbe A AND B en forma OR.',
+    },
+    {
+        left: `__A__ ${LOGIC.AND} (__A__ ${LOGIC.OR} __B__)`,
+        right: '__A__',
+        answer: 'Verdadero',
+        law: 'Absorción',
+        explanation: 'A absorbe A OR B en forma AND.',
+    },
+    {
+        left: `${LOGIC.NOT}(__A__ ${LOGIC.AND} __B__)`,
+        right: `${LOGIC.NOT}__A__ ${LOGIC.OR} ${LOGIC.NOT}__B__`,
+        answer: 'Verdadero',
+        law: 'De Morgan',
+        explanation: 'Negar AND lo convierte en OR y niega cada lado.',
+    },
+    {
+        left: `${LOGIC.NOT}(__A__ ${LOGIC.OR} __B__)`,
+        right: `${LOGIC.NOT}__A__ ${LOGIC.AND} ${LOGIC.NOT}__B__`,
+        answer: 'Verdadero',
+        law: 'De Morgan',
+        explanation: 'Negar OR lo convierte en AND y niega cada lado.',
+    },
+    {
+        left: `__A__ ${LOGIC.IMP} __B__`,
+        right: `${LOGIC.NOT}__A__ ${LOGIC.OR} __B__`,
+        answer: 'Verdadero',
+        law: 'Implicación',
+        explanation: 'La implicación es equivalente a NOT A OR B.',
+    },
+    {
+        left: `__A__ ${LOGIC.IMP} __B__`,
+        right: `${LOGIC.NOT}__A__ ${LOGIC.AND} __B__`,
+        correctRight: `${LOGIC.NOT}__A__ ${LOGIC.OR} __B__`,
+        answer: 'Falso',
+        law: 'Implicación',
+        explanation: 'La implicación no usa AND; usa OR con la negación del antecedente.',
+    },
+    {
+        left: `__A__ ${LOGIC.IFF} __B__`,
+        right: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.OR} (${LOGIC.NOT}__A__ ${LOGIC.AND} ${LOGIC.NOT}__B__)`,
+        answer: 'Verdadero',
+        law: 'Bicondicional',
+        explanation: 'Una bicondicional es verdadera cuando ambos lados coinciden.',
+    },
+    {
+        left: `__A__ ${LOGIC.IFF} __B__`,
+        right: `__A__ ${LOGIC.AND} __B__`,
+        correctRight: `(__A__ ${LOGIC.AND} __B__) ${LOGIC.OR} (${LOGIC.NOT}__A__ ${LOGIC.AND} ${LOGIC.NOT}__B__)`,
+        answer: 'Falso',
+        law: 'Bicondicional',
+        explanation: 'La bicondicional no es solo AND; también incluye el caso en que ambos son falsos.',
+    },
+];
+
+const LAW_TRUE_FALSE_BEGINNER_LIBRARY = LAW_TRUE_FALSE_LIBRARY.slice(0, 14);
+
 const shuffleArray = (items) => {
     const copy = [...items];
     for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -329,16 +602,21 @@ const makeEquivalenceChallenge = () => {
 };
 
 const makeLawChallenge = () => {
-    const card = instantiateLawCard(pick(LAW_LIBRARY));
-    const options = buildLawNameOptions(card.family);
+    const pool = Math.random() < 0.8 ? LAW_TRUE_FALSE_BEGINNER_LIBRARY : LAW_TRUE_FALSE_LIBRARY;
+    const card = instantiateLawCard(pick(pool));
+    const statement = `${card.left} = ${card.right}`;
+    const correctStatement = card.answer === 'Verdadero'
+        ? statement
+        : `${card.left} = ${card.correctRight || card.right}`;
 
     return {
         id: card.id,
-        family: card.family,
-        source: card.source,
-        target: card.target,
+        statement,
+        correctStatement,
+        law: card.law,
+        answer: card.answer,
+        options: ['Verdadero', 'Falso'],
         explanation: card.explanation,
-        options,
     };
 };
 
@@ -724,28 +1002,28 @@ const LawGame = ({ visible }) => {
         if (solved) return;
         setSelected(choice);
 
-        if (choice === challenge.family) {
+        if (choice === challenge.answer) {
             setSolved(true);
             setScore((current) => current + 1);
             setStreak((current) => current + 1);
-            setFeedback(`Yes. This is the law of ${challenge.family}. ${challenge.explanation}`);
+            setFeedback(`Correcto. ${challenge.correctStatement}. ${challenge.explanation}`);
             return;
         }
 
         setStreak(0);
-        setFeedback('Not quite. Keep the law names moving until they stick.');
+        setFeedback('Todavía no. Lee ambos lados y vuelve a intentarlo.');
     };
 
     return (
         <div className={visible ? 'block' : 'hidden'}>
             <GameShell
                 topic={TOPICS[1]}
-                title="Sprint de leyes"
-                description="Observa un patrón de ley e identifica su familia. La repetición ayuda a memorizar toda la lista sin aburrirse."
+                title="Verdadero o falso"
+                description="Lee la igualdad y decide si es verdadera o falsa. Muchas tarjetas son cortas para repetir leyes básicas y memorizar la forma correcta."
                 stats={[
                     { label: 'Puntaje', value: score },
                     { label: 'Racha', value: streak },
-                    { label: 'Enfoque', value: 'Nombre de ley' },
+                    { label: 'Enfoque', value: 'V / F' },
                 ]}
                 action={(
                     <button
@@ -754,37 +1032,37 @@ const LawGame = ({ visible }) => {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/25"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        Nueva tarjeta
+                        Nueva igualdad
                     </button>
                 )}
             >
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Tarjeta de ley</div>
+                            <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Enunciado</div>
                             <div className="mt-3 rounded-2xl bg-white px-4 py-5 font-mono text-lg font-black text-slate-900 shadow-sm">
-                                {challenge.source}
+                                {challenge.statement}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">Objetivo: {challenge.target}</span>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Familia: {challenge.family}</span>
+                                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">Responde V/F</span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Ley: {challenge.law}</span>
                             </div>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 bg-white p-4">
                             <div className="text-sm font-black text-slate-900">Consejo del profe</div>
                             <p className="mt-2 text-sm text-slate-600">
-                                Lee el patrón en voz alta. Los estudiantes recuerdan mejor las leyes cuando dicen la forma y el nombre juntos.
+                                Lee la igualdad en voz alta. Repetir el patrón y decir si es verdadero o falso ayuda a memorizar la ley.
                             </p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">¿Qué ley es?</div>
+                        <div className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">¿Verdadero o falso?</div>
                         <ChoiceGrid
                             options={challenge.options}
                             onPick={submit}
-                            disabled={false}
+                            disabled={solved}
                             selected={selected}
                         />
 
@@ -795,8 +1073,15 @@ const LawGame = ({ visible }) => {
                                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                                     : 'border-slate-200 bg-slate-50 text-slate-500'
                         }`}>
-                            {feedback || 'Elige la familia de ley que coincide con la fórmula.'}
+                            {feedback || 'Piensa si ambos lados son equivalentes y elige Verdadero o Falso.'}
                         </div>
+
+                        {solved && (
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Corrección</div>
+                                <div className="mt-2 font-mono text-sm text-slate-900">{challenge.correctStatement}</div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </GameShell>
